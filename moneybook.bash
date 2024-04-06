@@ -307,6 +307,12 @@ fi
 
 if [[ "$1" == 'inject' ]]
 then
+		if [[ $# -gt 2 ]]
+		then
+				echo "An incorrect amount of arguments were supplied. Aborting injection just in case." > /dev/stderr
+				exit 1
+		fi
+
 		Inject_Flow "$2"
 		exit $?
 fi
