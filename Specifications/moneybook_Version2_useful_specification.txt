@@ -1,0 +1,31 @@
+I have came across the deal with fixed expenses. When I first designed the program I did so completely overlooking the fixed expenses. To use the program without messing with fixed expenses I would need to manage fixed expenses manually, allowing the program to manage only the remainibg money and I needing to coordinate both things manually. Which is very inconvinient.
+
+I want the program to handle that for me as well.
+-----| Reflection |-----------
+
+Well, I treat fixed expenses as money that must be destined before destining money to Accounts. As a fixed expense is something important enough that takes presedence above "obligation-free" purchases to be made over Accounts.
+
+* What will a fixed income do when money is injected?
+It will warn the user if a given expense has not enough fundings.
+* What will occur after a fixed income is payed?
+The money is discounted from the fundings of the expense. That would normally leave the fundings of the thing at 0 although it might not occur...
+* What happens if an expense ends up being less expensive that I expected?
+The remaining would stay in the object. However I might want to inject that money into the Accounts or simply leave it where it is so there's less money necessary to fullfil the expense next time... 
+So the answer is: The program will prompt you the option to inject the remaining. If you accept it, then the inject sequence is triggered. Otherwise the money is kept for the next instance of the fixed expend.
+* What happens if an expense ends up being more expensive than I expected?
+Well. Obviously that should not occur. But what if it does?
+The easiest way to continue with this should be to deny the payment. Having to redirect money from an Account to the expense, creating a superhabit in order to compensate for it is another option. However, this defeats the pourpose of the fixed expense, as it would require for more money than it is supposed to get into the thing...
+I can think of allowing negative integers as a value for fundings, and allowing transactions that leave negative value. Having to redirect money from an Account to compensate for that. This seems to be the most right thing to do.
+Answer: You are warned that the payment exceeds the fundings. However you can commit it anyways. If you don't that 's it. If you do, the fundings are written to the expense regardless of being negative. You make for the lack of value incoming money to the expense.
+* Only incoming money should be destined to fixed expenses?
+I do think so. Using money of the Accounts to pay fixed expenses defeates the poupose of the Accounts themselves. They are built around purchase motives that don't fit with the fixed expenses. Plus they aim to allocate money that can be expended freely.
+Well... I kind of changed my mind... I mean, what I stated, I still think it is true, in the context of using money to the expense. However, I see it fit to use money of a given Account to make for lacking fundings for the payment of a given expense. As doing so still preserves the freedom of the fundings of the Account; the full availability of the Account. For this context...
+Answer: Yes. Although money from an Account could be used as a support to pay a fixed expending as long as after the thing, the fundings of the Account can be used freely.
+* When will money be destined to a fixed expense? / What needs to occur for money to be destined to a fixed expense?
+In my case, my fixed expenses are monthly. They occur every month. If I pay it, I don't need to worry until the next month. But exactly what day/hour in the month is unclear as the money comes from my salary and I don't get paid at the same day every month. So I would take care of it when I get money. Money that I inject into the program.
+But the key is "when I get money". Fulfilling the fixed expenses automatically ever I inject money is something I don't actually like. Therefore I want to take care of fixed expenses manually. However, I want some kind of warning of what expenses are dissatisfied when I inject money.
+
+So I think that whenever I inject money into the program, it would check if there's any fixed expense moeny that needs to be replenished, and if it does, the injected money is evaluated and if it is not superior to the fixed income/s value, then the whole income is destined to that expense. However of there's a remaining of that, then it is splitted among the Accounts aa usual.
+The thing with this is that I don't feel comfortable with the idea that right after paying the expense, any incoming money will be directed towards fixed expenses as most of the time I won't replenish them unless I make a considerable injection of money. But really, is it that bad? I will still have money in my Accounts to spend. But it is not about not having money to use... Is that I see innecessary to destine pennies to stuff that I will get coveree when I get my salary...
+No, I will manually input money to a fixed expense whenever I think is adequate.
+Answer: When I decide to input money to the expense.

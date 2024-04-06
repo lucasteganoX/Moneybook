@@ -1,0 +1,17 @@
+An Account file is one that:
+* Has its first line matching the expression `^'# This is a moneybook Account file'[[:blank:]]*$`
+* Has a line matching the expression `Foundings=[0-9]+[[:blank:]]*$`
+* Has a line matching the expression `Share=[0-9]+[[:blank:]]*$`
+* Is located at ~/moneybook
+Note: All expressions are written using grep's extended expressions.
+
+Supposed to describe a file that:
+> Has its first line being like: "# This is a moneybook Account file"
+> Has a line like: "Foundings=someintegernumbergoeshere"
+> Has a line like: "Share=someintegerpercentagegoeshere"
+
+Support for blank characters between the name of the variable, its value and the equal mark would require somewhat of a deeper adaptation of the program and I don't want to overkill it.
+Until something happens, Accounts will live at the root dir of the program.
+Just because I can, it doesn't mean I should.
+
+Blank characters before the end of the expressions are for making my own live easier when it comes to using non cli text editors.

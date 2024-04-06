@@ -1,0 +1,37 @@
+# It's purpose is...
+To make the management of my money and my spendings convinient.
+That to serve the ultimage goal of controlling my spendings.
+
+# It will allow...
+* To split any incomming money automatically
+I mean that I input an amount of money to the program, and it will automatically split the money to all the different accounts.
+Say that my spliting is: %50 to savings, %25 to recreation and %25 to education/self-investment. So if I input $1000 to the program, it will add $500 to the safeguard savings account, $250 to recreation and $250 to education.
+
+* To manage any purchase or taking of money of every account
+So if I want to buy a yogurt, for example, I tell the program that I will make a purcharse out of the recreation account, and it tells me what money I have remaining if I were to buy it, and if I do, it takes the money of the account.
+Of course, this also means the ability to regreat a purchatse when you are asked if you proceed with a current purcharse.
+
+# It will NOT allow...
+* To keep a history of what I spent money for
+Right now, this is an overkill. I want the scope of the thing to be smaller. I can think of using a git-commit-like notation for every purchase, but I will not do it at least for the moment.
+
+* To manage soft limits or alerts
+I won't prepare the program to work with partitions you make to the money.
+Say I aim to buy a book, so I want to save $1200 of my education account for that. I won't prepare the program to remind me nor straight up prevent me from spending money from that account if a transaction would make the money run below $1200(the price of the book).
+This could be a nice feature. But right now, it is an overkill. And it would make the program way more complex.
+
+* To manage negative value operations
+I won't prepare the program to manage operations that would make the money of an account to run below 0.
+This is because of complexity AND uncertenty. When it comes to uncerteny, I don't know how would I split the money if one or more accounts have a negative value, I would probably split that money and get it into the rest of accounts, but I don't know for sure. As it would need to take the exedent from another account.
+This is probably a feature that I will include at some point. But now I can afford to precind of this conviniency.
+Although it IS in fact a problem. As managing negative remainings is an important par of managing my whole finances.
+
+* The interactive creation or deletion of accounts
+This is overkill. And I don't aim to share this program with anyone. If I want to modify my splitting, I will do it manually, not interactively through the program. This also means...
+* The interactive modification of the split percentages of each account 
+
+* To interact through a custom shell for the program
+Some programs like iwd, adb-shell, etc, have a mode in which you execute orders directly in a prompt that runs under the program itself rather than under a linux shell. I won't do that. Is a huge overkill.
+
+* The working of the program regardless of its location
+I will not prepare the program to determine its own location. Instead it will work with a fixed location and that's it.

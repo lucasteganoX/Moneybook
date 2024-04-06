@@ -1,0 +1,32 @@
+* Natural language invocation
+I would really like if I could, for example, execute:
+~ $ moneybook separate 1000 for MyExpense
+instead of:
+~ $ moneybook separate 1000 MyExpense
+
+or:
+~ $ moneybook purchase 250 from MyAccount
+or:
+~ $ moneybook purchase from MyAccount by 250
+instead of:
+~ $ moneybook purchase MyAccount 250
+
+
+or:
+~ $ moneybook pay MyExpense with 2500
+instead of:
+~ $ moneybook pay MyExpense 2500
+
+Luckily, this isn't that hard to pull off. And it seems to require little adaptation of the algorithm. So I would really like it.
+
+* Support for labeling and basic tracking of purchases
+Something like appending a label like "food" to a purchase would create a rudimentary record and/or one could track how many money was spent on a specific purpose. 
+
+* Subroutine prefixing
+When you separate money for an expense and said expense is fulfilled, the program allows you to inject that money going through the flow of a regular injection as a subroutine. I would like that every line of that subroutine is prefixed with '+ '. The thing that gets in the way is the read command...
+
+* Support for Account currencies
+To specify an Account in dollars for example. For the sake of outputting the currency it would be fairly simple. For the sake of inputting the currency alongside the amount, it would be considerably difficult. Not a lot, but most likely will take some head scratching.
+
+* Support for stacked Expenses or saving Accounts
+

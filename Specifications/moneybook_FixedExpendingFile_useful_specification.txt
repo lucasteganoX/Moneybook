@@ -1,0 +1,17 @@
+Conceptually:
+A Fixed Expense contains fundings which might be negative, those are the money that's currently locked for the next payment of the expense and a budget, which is the money necessary for each payment of the expense and could not be zero.
+
+A Fixed Expending file for the moneybook script is one that fits the following criteria:
+* It's first line matches the expression '^# This is a Fixed Expending file for the mooneybook program[:blank:]*'
+* It has a line that matches '^Fundings=-?[0-9]+[:blank:]*'
+* It has a line that matches '^Budget=[0-9]+'
+* It does not match '^Budget=0'
+* It resides within the directory "~/moneybook/Fixed_Expenses
+Note: The regular expressions are in the form of grep's extended regular expressions.
+
+Which aims to describe a file like:
+> Has its first line looking like '# This is a Fixed Expending file for the mooneybook program'
+> Has a line like `Fundings=MyItegerValue` for example 'Fundings=-2300'
+> Has a line like `Budget=MyPositiveNonZeroIntegerValue` for example 'Budget=2200'
+> Resides in a directory called "Fixed_Expenses" which is inside the root dir of mooneybook.
+

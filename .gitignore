@@ -1,0 +1,13 @@
+/Version_Control
+/Fixed_Expenses
+
+### Accounts:
+# Probably in the future I will set the Accounts to reside at a specific dir.
+# For now, I will ignore all current Accounts.
+**/allowance
+**/selfinvestment
+**/savings
+# And their symlinks
+**/recreation
+**/safeguardsavings
+**/safeguard
