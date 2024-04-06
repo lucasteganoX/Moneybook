@@ -455,12 +455,15 @@ then
 		declare +i Payment_Cost
 		declare -i Expense_Funds
 		declare -i Postransaction_Expense_Funds
-		
-		if ! Name_Is_Expense "$Expense_Name"
+
+		local -i Name_Is_Expense_Status=$( Name_Is_Expense "$Expense_Name" 2> /dev/null ; echo $? ) # it would be nice to be able to invoke `Name_Is_Expense --echo "$Expense_Name" 2> /dev/null` to echo its exit status directly
+		if ! ( return $Name_Is_Expense_Status )
 		then
-				echo "Couldn't pay expense, the name \`${Expense_Name}\` couldn't be checked as a valid Expense file. Status: 4" > /dev/stderr
+				if [[ $Name_Is_Expense_Status -eq 2 ]] ; then echo "Couldn't pay expense, \`${Expense_Name}\`, no such file or directory."
+				else echo "Couldn't pay expense, the name \`${Expense_Name}\` is not a correct Fixed Account file. Status: 4" > /dev/stderr ; fi
 				return 4
 		fi
+		unset Name_Is_Expense_Status
 		
 		## Assign the variables
 		# Define the cost of the payment
