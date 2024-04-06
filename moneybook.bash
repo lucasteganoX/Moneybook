@@ -132,6 +132,12 @@ Echo_Unfulfilled_Expenses_Warnings() { # outputs: A warning message for each unf
 # Flow
 Inject_Flow() {
 
+		if [[ $# -gt 2 ]]
+		then
+				echo "An incorrect amount of arguments were supplied. Aborting injection just in case."
+				exit 1
+		fi
+
 		if ! . ~/moneybook/lib/Account_Methods.bash
 		then
 				echo "Couldn't source \`~/moneybook/bin/Account_Methods.bash\` file containing necessary proceedures to treat Accounts." > /dev/stderr
