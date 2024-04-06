@@ -324,7 +324,7 @@ then
 		# Incorrect input bounce backs 
 		if [[ -z "${2:+IsSet}" ]] ; then echo "Couldn't separate the money, missing arguments: Amount of money and Fixed Expense." > /dev/stderr ; return 2 ; fi
 		if [[ -z "${3:+IsSet}" ]] ; then echo "Couldn't separate the money, missing argument: Fixed Account." > /dev/stderr ; return 3 ; fi
-		if [[ ! "$2" =~ [0-9]+$ ]] ; then echo "Couldn't parse the second argument as a positive integer." > /dev/stderr ; fi
+		if [[ ! "$2" =~ [0-9]+$ ]] ; then echo "Couldn't parse the second argument as a positive integer." > /dev/stderr ; return 4 ; fi
 
 		declare -i Income="$2"
 		declare Expense_Name="$3"
