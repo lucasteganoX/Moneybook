@@ -282,7 +282,9 @@ Purchase_Flow() {
 		declare +r -i Read_Account_Status=$?
 		if [[ $Read_Account_Status -ne 0 ]]
 		then
-				echo "Unable to read Account, status: $Read_Account_Status" > /dev/stderr
+				if [[ "$Read_Account_Status" -eq 2 ]] ; then echo "Unable to read Account \`${Account_Name}\`, no such file or directory." > /dev/stderr
+				else echo "Unable to read Account \`${Account_Name}\`, couldn't parse \`${Account_Name}\` as a moneybook Account. Status: ${Read_Account_Status}" > /dev/stderr ; fi
+				# echo "Unable to read Account, status: $Read_Account_Status" > /dev/stderr
 				exit 3
 		fi
 		unset Read_Account_Status
@@ -456,7 +458,7 @@ then
 		declare -i Expense_Funds
 		declare -i Postransaction_Expense_Funds
 
-		local -i Name_Is_Expense_Status=$( Name_Is_Expense "$Expense_Name" 2> /dev/null ; echo $? ) # it would be nice to be able to invoke `Name_Is_Expense --echo "$Expense_Name" 2> /dev/null` to echo its exit status directly
+		local +r -i Name_Is_Expense_Status=$( Name_Is_Expense "$Expense_Name" 2> /dev/null ; echo $? ) # it would be nice to be able to invoke `Name_Is_Expense --echo "$Expense_Name" 2> /dev/null` to echo its exit status directly
 		if ! ( return $Name_Is_Expense_Status )
 		then
 				if [[ $Name_Is_Expense_Status -eq 2 ]] ; then echo "Couldn't pay expense, \`${Expense_Name}\`, no such file or directory."
