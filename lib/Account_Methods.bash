@@ -9,10 +9,10 @@ File_Is_Account() { # Abstract Synopsis: File_Is_Account PresuntAccountFile # re
 }
 
 Read_Account() { # Read_Account MyFooAccountName # echoes: Foundings of the Account(integer value) or nothing if an error occurred # returns: 0 if ok, 1 if other than 1 argument was passed, 2 if the account has a non integer value(including if the file is empty)
+		if [[ $# -ne 1 ]] ; then return 1 ; fi
+
 		declare -r Account_Name="$1"
-        declare -i Account_Foundings                                                                                                # if the Account were to have a non integer value, th>
-        # if there's no second argument, throw an exception
-        # if there's more than one argument, throw an excepti>
+        declare -i Account_Foundings
 
         Get_Foundings() { # Get_Foundings MyAccountName # echoes: Foundings of specified account(Integer)
         		declare -r Account_Name=$1
@@ -21,9 +21,9 @@ Read_Account() { # Read_Account MyFooAccountName # echoes: Foundings of the Acco
         		echo $Foundings
         }
 
-        if [[ $# -ne 1 ]] ; then return 1 ; fi
         if [[ ! -f ~/moneybook/"$Account_Name" ]] ; then return 2 ; fi
-        if [[ ! "$( Get_Foundings "$Account_Name" )" =~ ^[0-9]+$ ]] ; then return 3 ; fi
+		if ! File_Is_Account "$Account_Name" ; then return 3 ; fi
+        if [[ ! "$( Get_Foundings "$Account_Name" )" =~ ^[0-9]+$ ]] ; then return 4 ; fi
 
         Account_Foundings=$( Get_Foundings "$Account_Name" )
         echo $Account_Foundings && return 0
