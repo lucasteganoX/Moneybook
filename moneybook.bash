@@ -239,7 +239,7 @@ Echo_Account_State() { # Echo_Account_State MyAccountName PurchaseIntegerValueyA
 		fi
 
 		echo -e "
-		${Account_Name}\'s current foundings: ${Account_Current_Foundings}
+		${Account_Name}'s current foundings: ${Account_Current_Foundings}
 		Current purchase: ${Purchase_Value}
 		Remaining foundings after purchase: ${Remaining_Account_Foundings}\n
 		"
