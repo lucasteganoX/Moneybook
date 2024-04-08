@@ -226,9 +226,15 @@ Inject_Flow() {
 # ------------- Main -------
 
 # Bounce backs
-if [[ $# -lt 2 || $# -gt 3 ]] ; then echo -e $Command_Help_Message ; exit 1 ; fi
+case "$1" in # this facility is a commodity to not break the program while I implement atomic argument quantity control
+		('purchase') ;;
+		('inject' | 'separate' | 'pay')
+		if [[ $# -lt 2 || $# -gt 3 ]] ; then echo -e $Command_Help_Message ; exit 1 ; fi
+		;;
+esac
+
 if [[ "$1" == 'help' || "$1" == '--help' ]] ; then echo -e $Command_Help_Message ; exit 1 ; fi
-if [[ "$1" != 'purchase' && "$1" != 'inject' && "$1" != 'separate' && "$1" != 'pay' ]] ; then echo -e "$Incorrect_Mode_Message" ; exit 1 ; fi
+# if [[ "$1" != 'purchase' && "$1" != 'inject' && "$1" != 'separate' && "$1" != 'pay' ]] ; then echo -e "$Incorrect_Mode_Message" ; exit 1 ; fi
 
 # Purchase management mode
 Echo_Account_State() { # Echo_Account_State MyAccountName PurchaseIntegerValueyAccount CurrentFoundings Remaining_Account_Foundings
@@ -258,14 +264,23 @@ The Account you selected does not have enough money for that transaction. Sorry 
 if [[ "$1" == 'purchase' ]]
 then
 Purchase_Flow() {
+		if [[ $# -ne 2 ]]
+		then
+				if [[ ${1+IsSet} != 'IsSet' ]] ; then echo 'Missing arguments for purchase: Account Name, Price' > /dev/stderr
+				elif [[ ${2+IsSet} != 'IsSet' ]] ; then echo 'Missing argument for purchase: Price' > /dev/stderr
+				elif [[ ${3+IsSet} = 'IsSet' ]] ; then echo 'Extra arguments were supplied for purchase. Aborting just in case' > /dev/stderr
+				fi
+				exit 2
+		fi
+
 		if ! . ~/moneybook/lib/Account_Methods.bash
 		then
 				echo "Couldn't source \`~/moneybook/bin/Account_Methods.bash\` file containing necessary proceedures to treat Accounts." > /dev/stderr
 				return 99
 		fi
 
-		declare -r Account_Name=${2}
-		declare -r Purchase_Value=${3}
+		declare -r Account_Name=${1}
+		declare -r Purchase_Value=${2}
 		declare -i Account_Current_Foundings
 		declare -i Remaining_Account_Foundings
 
@@ -273,7 +288,7 @@ Purchase_Flow() {
 		if [[ ! "$Purchase_Value" =~ ^[0-9]+$ ]]
 		then
 				echo 'Invalid purchase value, please enter an integer value.' > /dev/stderr
-				exit 2
+				exit 3
 		fi
 
 		# Get Account state
@@ -284,8 +299,7 @@ Purchase_Flow() {
 		then
 				if [[ "$Read_Account_Status" -eq 2 ]] ; then echo "Unable to read Account \`${Account_Name}\`, no such file or directory." > /dev/stderr
 				else echo "Unable to read Account \`${Account_Name}\`, couldn't parse \`${Account_Name}\` as a moneybook Account. Status: ${Read_Account_Status}" > /dev/stderr ; fi
-				# echo "Unable to read Account, status: $Read_Account_Status" > /dev/stderr
-				exit 3
+				exit 4
 		fi
 		unset Read_Account_Status
 		set -e
@@ -297,7 +311,7 @@ Purchase_Flow() {
 		if [[ ! $Remaining_Account_Foundings -gt 0 ]] ; then echo "$Insufficient_Foundings_Message" > /dev/stderr ; exit 0 ; fi
 	
 		read -n 1 -p 'Do you wish to continue? Y/N: ' ; echo
-		if [[ "${REPLY,,}" != y && "${REPLY,,}" != n ]] ; then echo 'Invalid option, aborting.' > /dev/stderr ; exit 2 ; fi
+		if [[ "${REPLY,,}" != y && "${REPLY,,}" != n ]] ; then echo 'Invalid option, aborting.' > /dev/stderr ; exit 5 ; fi
 		if [[ "${REPLY,,}" == n ]]
 		then
 				echo 'Purchase cancelled'
@@ -309,7 +323,7 @@ Purchase_Flow() {
 		echo 'Purchase committed successfully'
 		exit 0
 		}
-		Purchase_Flow "$1" "$2" "$3"
+		( shift 1 ; Purchase_Flow "$@" )
 		exit $?
 fi
 
