@@ -223,13 +223,9 @@ Inject_Flow() {
 # ------------- Main -------
 
 # Bounce backs
-case "$1" in # this facility is a commodity to not break the program while I implement atomic argument quantity control
-		('purchase' | 'inject' | 'separate' | 'pay') ;;
-		# if [[ $# -lt 2 || $# -gt 3 ]] ; then echo -e $Command_Help_Message ; exit 1 ; fi
-esac
-
+if [[ $# -eq 0 ]] ; then echo -e $Command_Help_Message ; exit 1 ; fi
 if [[ "$1" == 'help' || "$1" == '--help' ]] ; then echo -e $Command_Help_Message ; exit 1 ; fi
-# if [[ "$1" != 'purchase' && "$1" != 'inject' && "$1" != 'separate' && "$1" != 'pay' ]] ; then echo -e "$Incorrect_Mode_Message" ; exit 1 ; fi
+if [[ "$1" != 'purchase' && "$1" != 'inject' && "$1" != 'separate' && "$1" != 'pay' ]] ; then echo -e "$Incorrect_Mode_Message" ; exit 1 ; fi
 
 # Purchase management mode
 Echo_Account_State() { # Echo_Account_State MyAccountName PurchaseIntegerValueyAccount CurrentFoundings Remaining_Account_Foundings
