@@ -224,8 +224,8 @@ Inject_Flow() {
 
 # Bounce backs
 case "$1" in # this facility is a commodity to not break the program while I implement atomic argument quantity control
-		('purchase' | 'inject' ) ;;
-		('separate' | 'pay')
+		('purchase' | 'inject' | 'separate') ;;
+		('pay')
 		if [[ $# -lt 2 || $# -gt 3 ]] ; then echo -e $Command_Help_Message ; exit 1 ; fi
 		;;
 esac
@@ -347,12 +347,13 @@ then
 
 		Separation_Flow() {
 		# Incorrect input bounce backs 
-		if [[ -z "${2:+IsSet}" ]] ; then echo "Couldn't separate the money, missing arguments: Amount of money and Fixed Expense." > /dev/stderr ; return 2 ; fi
-		if [[ -z "${3:+IsSet}" ]] ; then echo "Couldn't separate the money, missing argument: Fixed Account." > /dev/stderr ; return 3 ; fi
-		if [[ ! "$2" =~ [0-9]+$ ]] ; then echo "Couldn't parse the second argument as a positive integer." > /dev/stderr ; return 4 ; fi
+		if [[ -z "${1:+IsSet}" ]] ; then echo "Couldn't separate the money, missing arguments: Amount of money and Fixed Expense." > /dev/stderr ; return 2 ; fi
+		if [[ -z "${2:+IsSet}" ]] ; then echo "Couldn't separate the money, missing argument: Fixed Account." > /dev/stderr ; return 3 ; fi
+		if [[ ${3+IsSet} = 'IsSet' ]] ; then echo "Couldn't separate the money, exceeding arguments were passed. Aborting just in case." > /dev/stderr ; return 4 ; fi
+		if [[ ! "$1" =~ [0-9]+$ ]] ; then echo "Couldn't parse the second argument as a positive integer." > /dev/stderr ; return 5 ; fi
 
-		declare -i Income="$2"
-		declare Expense_Name="$3"
+		declare -i Income="$1"
+		declare Expense_Name="$2"
 		declare +r Expense_Funds
 		declare +r Expense_Budget
 		declare +r Postoperation_Expense_Funds
@@ -447,7 +448,8 @@ then
 		echo '------------------------'
 		echo 'The separation was committed successfully :)'
 		return 0
-		} ; Separation_Flow "$@" ; exit $?
+		}
+		( shift 1 ; Separation_Flow "$@" )
 fi
 if [[ "$1" = 'pay' ]]
 then
