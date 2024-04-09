@@ -131,26 +131,23 @@ Echo_Unfulfilled_Expenses_Warnings() { # outputs: A warning message for each unf
 
 # Flow
 Inject_Flow() {
-
-		if [[ $# -gt 2 ]]
+		# Argument quantity check
+		declare Argument_Quantity_Error=''
+		if [[ ${1:+IsSet} != 'IsSet' ]] ; then Argument_Quantity_Error='Missing argument for injection: Amount of incoming money' ; fi
+		if [[ ${2+IsSet} = 'IsSet' ]] ; then Argument_Quantity_Error='Extra argument/s were supplied for injection. Aborting just in case' ; fi
+		if [[ "$Argument_Quantity_Error" != '' ]]
 		then
-				echo "An incorrect amount of arguments were supplied. Aborting injection just in case."
-				exit 1
+				echo "$Argument_Quantity_Error" > /dev/stderr
+				return 2
 		fi
+		unset Argument_Quantity_Error
+		declare Incoming_Money="$1"
 
 		if ! . ~/moneybook/lib/Account_Methods.bash
 		then
 				echo "Couldn't source \`~/moneybook/bin/Account_Methods.bash\` file containing necessary proceedures to treat Accounts." > /dev/stderr
 				return 99
 		fi
-
-		if [[ ${1+IsSet} != 'IsSet' ]]
-		then
-				echo "Couldn't Inject money, lacking parameter: icomming money. Status: 2" > /dev/stderr
-				return 2
-		fi
-		
-		declare Incoming_Money="$1"
 
 		if ! Splitting_Is_Total
 		then
@@ -227,8 +224,8 @@ Inject_Flow() {
 
 # Bounce backs
 case "$1" in # this facility is a commodity to not break the program while I implement atomic argument quantity control
-		('purchase') ;;
-		('inject' | 'separate' | 'pay')
+		('purchase' | 'inject' ) ;;
+		('separate' | 'pay')
 		if [[ $# -lt 2 || $# -gt 3 ]] ; then echo -e $Command_Help_Message ; exit 1 ; fi
 		;;
 esac
@@ -329,13 +326,13 @@ fi
 
 if [[ "$1" == 'inject' ]]
 then
-		if [[ $# -gt 2 ]]
-		then
-				echo "An incorrect amount of arguments were supplied. Aborting injection just in case." > /dev/stderr
-				exit 1
-		fi
+		# if [[ $# -gt 2 ]]
+		# then
+				# echo "An incorrect amount of arguments were supplied. Aborting injection just in case." > /dev/stderr
+				# exit 1
+		# fi
 
-		Inject_Flow "$2"
+		( shift 1 ; Inject_Flow "$@" )
 		exit $?
 fi
 
