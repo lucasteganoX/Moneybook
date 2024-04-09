@@ -224,10 +224,8 @@ Inject_Flow() {
 
 # Bounce backs
 case "$1" in # this facility is a commodity to not break the program while I implement atomic argument quantity control
-		('purchase' | 'inject' | 'separate') ;;
-		('pay')
-		if [[ $# -lt 2 || $# -gt 3 ]] ; then echo -e $Command_Help_Message ; exit 1 ; fi
-		;;
+		('purchase' | 'inject' | 'separate' | 'pay') ;;
+		# if [[ $# -lt 2 || $# -gt 3 ]] ; then echo -e $Command_Help_Message ; exit 1 ; fi
 esac
 
 if [[ "$1" == 'help' || "$1" == '--help' ]] ; then echo -e $Command_Help_Message ; exit 1 ; fi
@@ -460,13 +458,19 @@ then
 				return 2
 		fi
 
-		if [[ ${2+IsSet} != 'IsSet' ]]
+		if [[ ${1+IsSet} != 'IsSet' ]]
 		then
 				echo "Couldn't pay expense, missing argument: Expense name. Status: 3" > /dev/stderr
 				return 3
 		fi
+
+		if [[ ${3+IsSet} = 'IsSet' ]]
+		then
+				echo "Couldn't pay expense, too much arguments. Status: 4" > /dev/stderr
+				return 4
+		fi
 		
-		declare Expense_Name="$2"
+		declare Expense_Name="$1"
 		declare +i Payment_Cost
 		declare -i Expense_Funds
 		declare -i Postransaction_Expense_Funds
@@ -475,33 +479,33 @@ then
 		if ! ( return $Name_Is_Expense_Status )
 		then
 				if [[ $Name_Is_Expense_Status -eq 2 ]] ; then echo "Couldn't pay expense, \`${Expense_Name}\`, no such file or directory."
-				else echo "Couldn't pay expense, the name \`${Expense_Name}\` is not a correct Fixed Account file. Status: 4" > /dev/stderr ; fi
-				return 4
+				else echo "Couldn't pay expense, the name \`${Expense_Name}\` is not a correct Fixed Account file. Status: 5" > /dev/stderr ; fi
+				return 5
 		fi
 		unset Name_Is_Expense_Status
 		
 		## Assign the variables
 		# Define the cost of the payment
-		if [[ ${3:+IsPresent} = 'IsPresent'  ]]
+		if [[ ${2:+IsPresent} = 'IsPresent'  ]]
 		then
-				if [[ ! "$3" =~ [0-9]+$ ]]
+				if [[ ! "$2" =~ [0-9]+$ ]]
 				then
-						echo "Couldn't parse the cost of the payment as a positive integer. Status: 5" > /dev/stderr
-						return 5
+						echo "Couldn't parse the cost of the payment as a positive integer. Status: 6" > /dev/stderr
+						return 6
 				fi
-				declare -i Payment_Cost="$3"
+				declare -i Payment_Cost="$2"
 		else
 				if ! Payment_Cost="$( Read_Expense_Budget "$Expense_Name" )"
 				then
-						echo "Couldn't get the budget of the Expense to use it as the cost of the payment. Status: 6" > /dev/stderr
-						return 6
+						echo "Couldn't get the budget of the Expense to use it as the cost of the payment. Status: 7" > /dev/stderr
+						return 7
 				fi
 				declare -i Payment_Cost
 		fi
 		if ! Expense_Funds="$( Read_Expense_Funds "$Expense_Name" )"
 		then
-				echo "; Couldn't get current funds of the Expense. Status: 7"
-				return 7 
+				echo "; Couldn't get current funds of the Expense. Status: 8"
+				return 8
 		fi
 		Postransaction_Expense_Funds=$(( Expense_Funds - Payment_Cost ))
 
@@ -535,7 +539,7 @@ then
 		return 0
 
 		}
-		Payment_Flow "$@"
+		( shift 1 ; Payment_Flow "$@" )
 		exit $?
 fi
 
