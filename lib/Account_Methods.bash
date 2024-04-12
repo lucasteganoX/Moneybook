@@ -14,26 +14,25 @@ File_Is_Account() { # Abstract Synopsis: File_Is_Account PresuntAccountFilePath 
 
 # Relative methods
 ## These are functions that operate over a given name. Which is expected to correspond to a file under the root dir of the program.
-Read_Account() { # Read_Account MyFooAccountName # echoes: Foundings of the Account(integer value) or nothing if an error occurred # returns: 0 if ok, 1 if other than 1 argument was passed, 2 if the account has a non integer value(including if the file is empty)
+Read_Account() { # Read_Account MyFooAccountName # echoes: Foundings of the Account(integer value) or nothing if an error occurred # returns: 0 if ok, 1 if other than 1 argument was passed, 2, if the Account file reached couldn't be evaluated as a moneybook Account file, 3 if the account has a non integer value(including if the file is empty)
 		if [[ $# -ne 1 ]] ; then return 1 ; fi
 
-		declare -r Account_Name="$1"
-        declare -i Account_Foundings
-
-        Get_Foundings() { # Get_Foundings MyAccountName # echoes: Foundings of specified account(Integer)
-        		declare -r Account_Name=$1
-        		declare -i Foundings
-        		Foundings=$( grep --color=never 'Foundings=' ~/moneybook/"$Account_Name" | cut --field=2 --delim='=' )
+		Get_Foundings() { # Get_Foundings MyAccountPath # echoes: Foundings of specified account(Integer)
+				declare -r Account_File_Path="$1"
+        		declare +i Foundings
+        		Foundings="$( grep --color=never 'Foundings=' "$Account_File_Path" | cut --field=2 --delim='=' )"
         		echo $Foundings
         }
 
-        if [[ ! -f ~/moneybook/"$Account_Name" ]] ; then return 2 ; fi
-		
-		if ! File_Is_Account "$Account_Name" ; then return 3 ; fi
-        if [[ ! "$( Get_Foundings "$Account_Name" )" =~ ^[0-9]+$ ]] ; then return 4 ; fi
+		declare -r Account_Name="$1"
+		declare -r Account_File_Path=~/moneybook/"${Account_Name}"
+        declare -i Account_Foundings
 
-        Account_Foundings=$( Get_Foundings "$Account_Name" )
-        echo $Account_Foundings && return 0
+        if ! File_Is_Account "$Account_File_Path" ; then return 2 ; fi
+        Account_Foundings="$( Get_Foundings "$Account_File_Path" )"
+        if [[ ! "$Account_Foundings" =~ ^[0-9]+$ ]] ; then return 3 ; fi
+        echo $Account_Foundings
+		return 0
 }
 
 Write_Account() { # Write_Account MyFooAccount MyNewIntegerValueFoundings # returns: 0 if everything is ok, 1 if any but two arguments were passed, 2 if the Account file of the specified name could not be found, 3 if the content of the Account file is any but an integer number(including if the file is empty)
