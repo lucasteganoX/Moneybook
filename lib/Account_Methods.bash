@@ -1,3 +1,5 @@
+# Absolute methods
+## These are functions that operate over files directly given to them. One might say they are proper "methods".
 File_Is_Account() { # Abstract Synopsis: File_Is_Account PresuntAccountFilePath # returns: 0 if file is an Account file, 1 if it is not.
 		# Based on the Account file specification
 		declare File_Path="$1"
@@ -10,6 +12,21 @@ File_Is_Account() { # Abstract Synopsis: File_Is_Account PresuntAccountFilePath 
 		return 0
 }
 
+Read_Account_Share() { # Read_Account_Share MyAccountName # returns: 0 if ok, 1 if file was not found and 2 if the value was not an integer # echoes: Integer percentage of money associated to the account
+		declare -r Account_Name="$1"
+		declare -i Percentage
+
+		if [[ ! -f "$Account_Name" ]] ; then return 1 ; fi
+		# input integer check
+		Percentage=$( grep --color=never 'Share=' "$Account_Name" | cut --field=2 --delim='=' )
+
+		if [[ ! "$Percentage" =~ ^[0-9]+$ ]] ; then return 2 ; fi
+		echo $Percentage
+		return 0
+}
+
+# Relative methods
+## These are functions that operate over a given name. Which is expected to correspond to a file under the root dir of the program.
 Read_Account() { # Read_Account MyFooAccountName # echoes: Foundings of the Account(integer value) or nothing if an error occurred # returns: 0 if ok, 1 if other than 1 argument was passed, 2 if the account has a non integer value(including if the file is empty)
 		if [[ $# -ne 1 ]] ; then return 1 ; fi
 
@@ -44,16 +61,4 @@ Write_Account() { # Write_Account MyFooAccount MyNewIntegerValueFoundings # retu
 		return 0
 }
 
-Read_Account_Share() { # Read_Account_Share MyAccountName # returns: 0 if ok, 1 if file was not found and 2 if the value was not an integer # echoes: Integer percentage of money associated to the account
-		declare -r Account_Name="$1"
-		declare -i Percentage
-
-		if [[ ! -f "$Account_Name" ]] ; then return 1 ; fi
-		# input integer check
-		Percentage=$( grep --color=never 'Share=' "$Account_Name" | cut --field=2 --delim='=' )
-
-		if [[ ! "$Percentage" =~ ^[0-9]+$ ]] ; then return 2 ; fi
-		echo $Percentage
-		return 0
-}
 
