@@ -131,26 +131,23 @@ Echo_Unfulfilled_Expenses_Warnings() { # outputs: A warning message for each unf
 
 # Flow
 Inject_Flow() {
-
-		if [[ $# -gt 2 ]]
+		# Argument quantity check
+		declare Argument_Quantity_Error=''
+		if [[ ${1:+IsSet} != 'IsSet' ]] ; then Argument_Quantity_Error='Missing argument for injection: Amount of incoming money' ; fi
+		if [[ ${2+IsSet} = 'IsSet' ]] ; then Argument_Quantity_Error='Extra argument/s were supplied for injection. Aborting just in case' ; fi
+		if [[ "$Argument_Quantity_Error" != '' ]]
 		then
-				echo "An incorrect amount of arguments were supplied. Aborting injection just in case."
-				exit 1
+				echo "$Argument_Quantity_Error" > /dev/stderr
+				return 2
 		fi
+		unset Argument_Quantity_Error
+		declare Incoming_Money="$1"
 
 		if ! . ~/moneybook/lib/Account_Methods.bash
 		then
 				echo "Couldn't source \`~/moneybook/bin/Account_Methods.bash\` file containing necessary proceedures to treat Accounts." > /dev/stderr
 				return 99
 		fi
-
-		if [[ ${1+IsSet} != 'IsSet' ]]
-		then
-				echo "Couldn't Inject money, lacking parameter: icomming money. Status: 2" > /dev/stderr
-				return 2
-		fi
-		
-		declare Incoming_Money="$1"
 
 		if ! Splitting_Is_Total
 		then
@@ -226,7 +223,7 @@ Inject_Flow() {
 # ------------- Main -------
 
 # Bounce backs
-if [[ $# -lt 2 || $# -gt 3 ]] ; then echo -e $Command_Help_Message ; exit 1 ; fi
+if [[ $# -eq 0 ]] ; then echo -e $Command_Help_Message ; exit 1 ; fi
 if [[ "$1" == 'help' || "$1" == '--help' ]] ; then echo -e $Command_Help_Message ; exit 1 ; fi
 if [[ "$1" != 'purchase' && "$1" != 'inject' && "$1" != 'separate' && "$1" != 'pay' ]] ; then echo -e "$Incorrect_Mode_Message" ; exit 1 ; fi
 
@@ -258,14 +255,23 @@ The Account you selected does not have enough money for that transaction. Sorry 
 if [[ "$1" == 'purchase' ]]
 then
 Purchase_Flow() {
+		if [[ $# -ne 2 ]]
+		then
+				if [[ ${1+IsSet} != 'IsSet' ]] ; then echo 'Missing arguments for purchase: Account Name, Price' > /dev/stderr
+				elif [[ ${2+IsSet} != 'IsSet' ]] ; then echo 'Missing argument for purchase: Price' > /dev/stderr
+				elif [[ ${3+IsSet} = 'IsSet' ]] ; then echo 'Extra arguments were supplied for purchase. Aborting just in case' > /dev/stderr
+				fi
+				exit 2
+		fi
+
 		if ! . ~/moneybook/lib/Account_Methods.bash
 		then
 				echo "Couldn't source \`~/moneybook/bin/Account_Methods.bash\` file containing necessary proceedures to treat Accounts." > /dev/stderr
 				return 99
 		fi
 
-		declare -r Account_Name=${2}
-		declare -r Purchase_Value=${3}
+		declare -r Account_Name=${1}
+		declare -r Purchase_Value=${2}
 		declare -i Account_Current_Foundings
 		declare -i Remaining_Account_Foundings
 
@@ -273,7 +279,7 @@ Purchase_Flow() {
 		if [[ ! "$Purchase_Value" =~ ^[0-9]+$ ]]
 		then
 				echo 'Invalid purchase value, please enter an integer value.' > /dev/stderr
-				exit 2
+				exit 3
 		fi
 
 		# Get Account state
@@ -282,8 +288,9 @@ Purchase_Flow() {
 		declare +r -i Read_Account_Status=$?
 		if [[ $Read_Account_Status -ne 0 ]]
 		then
-				echo "Unable to read Account, status: $Read_Account_Status" > /dev/stderr
-				exit 3
+				if [[ "$Read_Account_Status" -eq 2 ]] ; then echo "Unable to read Account \`${Account_Name}\`, no such file or directory." > /dev/stderr
+				else echo "Unable to read Account \`${Account_Name}\`, couldn't parse \`${Account_Name}\` as a moneybook Account. Status: ${Read_Account_Status}" > /dev/stderr ; fi
+				exit 4
 		fi
 		unset Read_Account_Status
 		set -e
@@ -295,7 +302,7 @@ Purchase_Flow() {
 		if [[ ! $Remaining_Account_Foundings -gt 0 ]] ; then echo "$Insufficient_Foundings_Message" > /dev/stderr ; exit 0 ; fi
 	
 		read -n 1 -p 'Do you wish to continue? Y/N: ' ; echo
-		if [[ "${REPLY,,}" != y && "${REPLY,,}" != n ]] ; then echo 'Invalid option, aborting.' > /dev/stderr ; exit 2 ; fi
+		if [[ "${REPLY,,}" != y && "${REPLY,,}" != n ]] ; then echo 'Invalid option, aborting.' > /dev/stderr ; exit 5 ; fi
 		if [[ "${REPLY,,}" == n ]]
 		then
 				echo 'Purchase cancelled'
@@ -307,19 +314,19 @@ Purchase_Flow() {
 		echo 'Purchase committed successfully'
 		exit 0
 		}
-		Purchase_Flow "$1" "$2" "$3"
+		( shift 1 ; Purchase_Flow "$@" )
 		exit $?
 fi
 
 if [[ "$1" == 'inject' ]]
 then
-		if [[ $# -gt 2 ]]
-		then
-				echo "An incorrect amount of arguments were supplied. Aborting injection just in case." > /dev/stderr
-				exit 1
-		fi
+		# if [[ $# -gt 2 ]]
+		# then
+				# echo "An incorrect amount of arguments were supplied. Aborting injection just in case." > /dev/stderr
+				# exit 1
+		# fi
 
-		Inject_Flow "$2"
+		( shift 1 ; Inject_Flow "$@" )
 		exit $?
 fi
 
@@ -334,12 +341,13 @@ then
 
 		Separation_Flow() {
 		# Incorrect input bounce backs 
-		if [[ -z "${2:+IsSet}" ]] ; then echo "Couldn't separate the money, missing arguments: Amount of money and Fixed Expense." > /dev/stderr ; return 2 ; fi
-		if [[ -z "${3:+IsSet}" ]] ; then echo "Couldn't separate the money, missing argument: Fixed Account." > /dev/stderr ; return 3 ; fi
-		if [[ ! "$2" =~ [0-9]+$ ]] ; then echo "Couldn't parse the second argument as a positive integer." > /dev/stderr ; return 4 ; fi
+		if [[ -z "${1:+IsSet}" ]] ; then echo "Couldn't separate the money, missing arguments: Amount of money and Fixed Expense." > /dev/stderr ; return 2 ; fi
+		if [[ -z "${2:+IsSet}" ]] ; then echo "Couldn't separate the money, missing argument: Fixed Account." > /dev/stderr ; return 3 ; fi
+		if [[ ${3+IsSet} = 'IsSet' ]] ; then echo "Couldn't separate the money, exceeding arguments were passed. Aborting just in case." > /dev/stderr ; return 4 ; fi
+		if [[ ! "$1" =~ [0-9]+$ ]] ; then echo "Couldn't parse the second argument as a positive integer." > /dev/stderr ; return 5 ; fi
 
-		declare -i Income="$2"
-		declare Expense_Name="$3"
+		declare -i Income="$1"
+		declare Expense_Name="$2"
 		declare +r Expense_Funds
 		declare +r Expense_Budget
 		declare +r Postoperation_Expense_Funds
@@ -434,7 +442,8 @@ then
 		echo '------------------------'
 		echo 'The separation was committed successfully :)'
 		return 0
-		} ; Separation_Flow "$@" ; exit $?
+		}
+		( shift 1 ; Separation_Flow "$@" )
 fi
 if [[ "$1" = 'pay' ]]
 then
@@ -445,45 +454,54 @@ then
 				return 2
 		fi
 
-		if [[ ${2+IsSet} != 'IsSet' ]]
+		if [[ ${1+IsSet} != 'IsSet' ]]
 		then
 				echo "Couldn't pay expense, missing argument: Expense name. Status: 3" > /dev/stderr
 				return 3
 		fi
-		
-		declare Expense_Name="$2"
-		declare +i Payment_Cost
-		declare -i Expense_Funds
-		declare -i Postransaction_Expense_Funds
-		
-		if ! Name_Is_Expense "$Expense_Name"
+
+		if [[ ${3+IsSet} = 'IsSet' ]]
 		then
-				echo "Couldn't pay expense, the name \`${Expense_Name}\` couldn't be checked as a valid Expense file. Status: 4" > /dev/stderr
+				echo "Couldn't pay expense, too much arguments. Status: 4" > /dev/stderr
 				return 4
 		fi
 		
+		declare Expense_Name="$1"
+		declare +i Payment_Cost
+		declare -i Expense_Funds
+		declare -i Postransaction_Expense_Funds
+
+		local +r -i Name_Is_Expense_Status=$( Name_Is_Expense "$Expense_Name" 2> /dev/null ; echo $? ) # it would be nice to be able to invoke `Name_Is_Expense --echo "$Expense_Name" 2> /dev/null` to echo its exit status directly
+		if ! ( return $Name_Is_Expense_Status )
+		then
+				if [[ $Name_Is_Expense_Status -eq 2 ]] ; then echo "Couldn't pay expense, \`${Expense_Name}\`, no such file or directory."
+				else echo "Couldn't pay expense, the name \`${Expense_Name}\` is not a correct Fixed Account file. Status: 5" > /dev/stderr ; fi
+				return 5
+		fi
+		unset Name_Is_Expense_Status
+		
 		## Assign the variables
 		# Define the cost of the payment
-		if [[ ${3:+IsPresent} = 'IsPresent'  ]]
+		if [[ ${2:+IsPresent} = 'IsPresent'  ]]
 		then
-				if [[ ! "$3" =~ [0-9]+$ ]]
+				if [[ ! "$2" =~ [0-9]+$ ]]
 				then
-						echo "Couldn't parse the cost of the payment as a positive integer. Status: 5" > /dev/stderr
-						return 5
+						echo "Couldn't parse the cost of the payment as a positive integer. Status: 6" > /dev/stderr
+						return 6
 				fi
-				declare -i Payment_Cost="$3"
+				declare -i Payment_Cost="$2"
 		else
 				if ! Payment_Cost="$( Read_Expense_Budget "$Expense_Name" )"
 				then
-						echo "Couldn't get the budget of the Expense to use it as the cost of the payment. Status: 6" > /dev/stderr
-						return 6
+						echo "Couldn't get the budget of the Expense to use it as the cost of the payment. Status: 7" > /dev/stderr
+						return 7
 				fi
 				declare -i Payment_Cost
 		fi
 		if ! Expense_Funds="$( Read_Expense_Funds "$Expense_Name" )"
 		then
-				echo "; Couldn't get current funds of the Expense. Status: 7"
-				return 7 
+				echo "; Couldn't get current funds of the Expense. Status: 8"
+				return 8
 		fi
 		Postransaction_Expense_Funds=$(( Expense_Funds - Payment_Cost ))
 
@@ -517,7 +535,7 @@ then
 		return 0
 
 		}
-		Payment_Flow "$@"
+		( shift 1 ; Payment_Flow "$@" )
 		exit $?
 fi
 
