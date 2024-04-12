@@ -1,10 +1,12 @@
-File_Is_Account() { # Abstract Synopsis: File_Is_Account PresuntAccountFile # returns: 0 if file is an Account file, 1 if it is not.
+File_Is_Account() { # Abstract Synopsis: File_Is_Account PresuntAccountFilePath # returns: 0 if file is an Account file, 1 if it is not.
 		# Based on the Account file specification
-		declare File="$1"
+		declare File_Path="$1"
 
-		if [[ ! "$( head --lines=1 "$File" )" =~ ^'# This is a moneybook Account file'[[:blank:]]*$ ]] ; then return 1 ; fi
-		if [[ ! -n "$( grep -E 'Foundings=[0-9]+[[:blank:]]*$' "$File" )" ]] ; then return 1 ; fi
-		if [[ ! -n "$( grep -E 'Share=[0-9]+[[:blank:]]*$' "$File" )" ]] ; then return 1 ; fi
+		if [[ ! -f "$File_Path" ]] ; then return 1 ; fi
+		if [[ ! -r "$File_Path" ]] ; then return 1 ; fi
+		if [[ ! "$( head --lines=1 "$File_Path" )" =~ ^'# This is a moneybook Account file'[[:blank:]]*$ ]] ; then return 1 ; fi
+		if [[ ! -n "$( grep -E 'Foundings=[0-9]+[[:blank:]]*$' "$File_Path" )" ]] ; then return 1 ; fi
+		if [[ ! -n "$( grep -E 'Share=[0-9]+[[:blank:]]*$' "$File_Path" )" ]] ; then return 1 ; fi
 		return 0
 }
 
@@ -54,3 +56,4 @@ Read_Account_Share() { # Read_Account_Share MyAccountName # returns: 0 if ok, 1 
 		echo $Percentage
 		return 0
 }
+
