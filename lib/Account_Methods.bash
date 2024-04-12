@@ -35,16 +35,16 @@ Read_Account() { # Read_Account MyFooAccountName # echoes: Foundings of the Acco
 		return 0
 }
 
-Write_Account() { # Write_Account MyFooAccount MyNewIntegerValueFoundings # returns: 0 if everything is ok, 1 if any but two arguments were passed, 2 if the Account file of the specified name could not be found, 3 if the content of the Account file is any but an integer number(including if the file is empty)
-		declare -r Account_Name="$1"
-		declare -r New_Foundings=$2
-
+Write_Account() { # Write_Account MyFooAccountName MyNewIntegerValueFoundings # returns: 0 if everything is ok, 1 if any but two arguments were passed, 2 if the associated file couldn't be evaluated as a moneybook Account file, 3 if the second argument is any but an integer number and 4 if the write itself failed somehow
 		if [[ $# -ne 2 ]] ; then return 1 ; fi
-		if [[ ! -f ~/moneybook/"$Account_Name" ]] ; then return 2 ; fi
-		if [[ ! $New_Foundings =~ ^[0-9]+$ ]] ; then return 3 ; fi
 
-		# echo $New_Foundings > "$Account_Name"
-		sed --in-place --follow-symlinks "s/Foundings=.*$/Foundings=${New_Foundings}/" ~/moneybook/"$Account_Name" || return 4
+		declare -r Account_Name="${1}"
+		declare -r Account_File_Path=~/moneybook/"${Account_Name}"
+		declare -r New_Foundings=${2}
+
+		if ! File_Is_Account "$Account_File_Path" ; then return 2 ; fi
+		if [[ ! "$New_Foundings" =~ ^[0-9]+$ ]] ; then return 3 ; fi
+		if ! sed --in-place --follow-symlinks "s/Foundings=.*$/Foundings=${New_Foundings}/" "$Account_File_Path" ; then return 4 ; fi
 		return 0
 }
 
