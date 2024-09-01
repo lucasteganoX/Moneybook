@@ -265,10 +265,16 @@ Purchase_Flow() {
 				exit 2
 		fi
 
+		# Sourcing
 		if ! . ~/moneybook/lib/Account_Methods.bash
 		then
 				echo "Couldn't source \`~/moneybook/bin/Account_Methods.bash\` file containing necessary proceedures to treat Accounts." > /dev/stderr
 				return 99
+		fi
+		if ! . ~/moneybook/lib/Logging_Methods.bash
+		then
+				echo "Couldn't source \`~/moneybook/lib/Logging_Methods\` file, which cointains necessary procedures to log purchases." > /dev/stderr
+				return 100
 		fi
 
 		declare -r Account_Name=${1}
@@ -310,11 +316,25 @@ Purchase_Flow() {
 				exit 1
 		fi
 	
-		# Commit the purchase
+		# Log the purchase
+		if ! Log_Purchase "$Account_Name" "$Purchase_Value" # "$Purchase_Message"
+		then
+				echo "The purchase couldn't be logged..." > /dev/stderr
+				echo "The purchase hasn't take effect yet. You can safely cancel it now."
+				echo -e "If you proceed anyway the purchase won't be logged. If you don't then it will be cancelled and won't take effect.\n"
+				read -n 1 -p 'Do you wish to continue? Y/N: ' ; echo
+				case "${REPLY,,}" in
+				y) ;;
+				n) echo 'Purchase canceled' ; return 1 ;;
+				*) echo 'Invalid option, aborting.' > /dev/stderr ; exit 5 ;;
+				esac
+		fi
+
+		# Update the funds
 		Write_Account "$Account_Name" $Remaining_Account_Foundings
 		echo 'Purchase committed successfully'
 		exit 0
-		}
+}
 		( shift 1 ; Purchase_Flow "$@" )
 		exit $?
 fi
