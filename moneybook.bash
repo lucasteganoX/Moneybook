@@ -11,10 +11,11 @@ Regularly ~/moneybook
 
 Command_Help_Message="
 Purcharse management mode:\n
-\t	Concrete synopsis: ${0} purcharse education 12000\n
-\t	Abstract synopsis: ${0} purcharse /033[2;0AccountFileName PurcharseIntegerValue\n
+\t	Concrete synopsis: ${0} purcharse education 12000 'Hardvard course'\n
+\t	Abstract synopsis: ${0} purcharse /033[2;0AccountFileName PurcharseIntegerValue [ PurchaseLogMessage ]\n
 \n
 \t	Purcharse managment mode allows you to stage a purcharse over one of your Accounts. Allowing you to see your current foundings and what would remain if you commit the current purcharse.\n
+\t	Each purchase is logged into the \`moneybook.log\` file, which is under the log directory of the OS. If given a message for the purchase, it gets logged along with the rest of the purchase.\n
 Money injection mode:\n
 \t	Concrete synopsis: ${0} inject 4700\n
 \t	Abstract synopsis: ${0} inject YourIncomingIntegerAmountOfMoney\n
