@@ -252,6 +252,9 @@ Echo_Account_State() { # Echo_Account_State MyAccountName PurchaseIntegerValueyA
 Insufficient_Foundings_Message='
 The Account you selected does not have enough money for that transaction. Sorry :(
 '
+No_Purchase_Message_Warning='
+Warning: no purchase message was supplied!
+'
 
 if [[ "$1" == 'purchase' ]]
 then
@@ -306,6 +309,7 @@ Purchase_Flow() {
 		Remaining_Account_Foundings=$(( Account_Current_Foundings - Purchase_Value ))
 	
 		# Displaying the purchase screen
+		if [[ "$Purchase_Message" = "" ]] ; then echo $No_Purchase_Message_Warning ; fi
 		Echo_Account_State "$Account_Name" "$Purchase_Value" "$Account_Current_Foundings" "$Remaining_Account_Foundings"
 		if [[ ! $Remaining_Account_Foundings -gt 0 ]] ; then echo "$Insufficient_Foundings_Message" > /dev/stderr ; exit 0 ; fi
 	
