@@ -256,11 +256,11 @@ The Account you selected does not have enough money for that transaction. Sorry 
 if [[ "$1" == 'purchase' ]]
 then
 Purchase_Flow() {
-		if [[ $# -ne 2 ]]
+		if [[ $# -lt 2 || $# -gt 3 ]]
 		then
 				if [[ ${1+IsSet} != 'IsSet' ]] ; then echo 'Missing arguments for purchase: Account Name, Price' > /dev/stderr
 				elif [[ ${2+IsSet} != 'IsSet' ]] ; then echo 'Missing argument for purchase: Price' > /dev/stderr
-				elif [[ ${3+IsSet} = 'IsSet' ]] ; then echo 'Extra arguments were supplied for purchase. Aborting just in case' > /dev/stderr
+				elif [[ ${4+IsSet} = 'IsSet' ]] ; then echo 'Extra arguments were supplied for purchase. Aborting just in case' > /dev/stderr
 				fi
 				exit 2
 		fi
@@ -279,6 +279,7 @@ Purchase_Flow() {
 
 		declare -r Account_Name=${1}
 		declare -r Purchase_Value=${2}
+		declare -r Purchase_Message=${3-}
 		declare -i Account_Current_Foundings
 		declare -i Remaining_Account_Foundings
 
