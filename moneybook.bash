@@ -11,10 +11,11 @@ Regularly ~/moneybook
 
 Command_Help_Message="
 Purcharse management mode:\n
-\t	Concrete synopsis: ${0} purcharse education 12000\n
-\t	Abstract synopsis: ${0} purcharse /033[2;0AccountFileName PurcharseIntegerValue\n
+\t	Concrete synopsis: ${0} purcharse education 12000 'Hardvard course'\n
+\t	Abstract synopsis: ${0} purcharse /033[2;0AccountFileName PurcharseIntegerValue [ PurchaseLogMessage ]\n
 \n
 \t	Purcharse managment mode allows you to stage a purcharse over one of your Accounts. Allowing you to see your current foundings and what would remain if you commit the current purcharse.\n
+\t	Each purchase is logged into the \`moneybook.log\` file, which is under the log directory of the OS. If given a message for the purchase, it gets logged along with the rest of the purchase.\n
 Money injection mode:\n
 \t	Concrete synopsis: ${0} inject 4700\n
 \t	Abstract synopsis: ${0} inject YourIncomingIntegerAmountOfMoney\n
@@ -251,27 +252,37 @@ Echo_Account_State() { # Echo_Account_State MyAccountName PurchaseIntegerValueyA
 Insufficient_Foundings_Message='
 The Account you selected does not have enough money for that transaction. Sorry :(
 '
+No_Purchase_Message_Warning='
+Warning: no purchase message was supplied!
+'
 
 if [[ "$1" == 'purchase' ]]
 then
 Purchase_Flow() {
-		if [[ $# -ne 2 ]]
+		if [[ $# -lt 2 || $# -gt 3 ]]
 		then
 				if [[ ${1+IsSet} != 'IsSet' ]] ; then echo 'Missing arguments for purchase: Account Name, Price' > /dev/stderr
 				elif [[ ${2+IsSet} != 'IsSet' ]] ; then echo 'Missing argument for purchase: Price' > /dev/stderr
-				elif [[ ${3+IsSet} = 'IsSet' ]] ; then echo 'Extra arguments were supplied for purchase. Aborting just in case' > /dev/stderr
+				elif [[ ${4+IsSet} = 'IsSet' ]] ; then echo 'Extra arguments were supplied for purchase. Aborting just in case' > /dev/stderr
 				fi
 				exit 2
 		fi
 
+		# Sourcing
 		if ! . ~/moneybook/lib/Account_Methods.bash
 		then
 				echo "Couldn't source \`~/moneybook/bin/Account_Methods.bash\` file containing necessary proceedures to treat Accounts." > /dev/stderr
 				return 99
 		fi
+		if ! . ~/moneybook/lib/Logging_Methods.bash
+		then
+				echo "Couldn't source \`~/moneybook/lib/Logging_Methods\` file, which cointains necessary procedures to log purchases." > /dev/stderr
+				return 100
+		fi
 
 		declare -r Account_Name=${1}
 		declare -r Purchase_Value=${2}
+		declare -r Purchase_Message=${3-}
 		declare -i Account_Current_Foundings
 		declare -i Remaining_Account_Foundings
 
@@ -298,6 +309,7 @@ Purchase_Flow() {
 		Remaining_Account_Foundings=$(( Account_Current_Foundings - Purchase_Value ))
 	
 		# Displaying the purchase screen
+		if [[ "$Purchase_Message" = "" ]] ; then echo $No_Purchase_Message_Warning ; fi
 		Echo_Account_State "$Account_Name" "$Purchase_Value" "$Account_Current_Foundings" "$Remaining_Account_Foundings"
 		if [[ ! $Remaining_Account_Foundings -gt 0 ]] ; then echo "$Insufficient_Foundings_Message" > /dev/stderr ; exit 0 ; fi
 	
@@ -309,11 +321,25 @@ Purchase_Flow() {
 				exit 1
 		fi
 	
-		# Commit the purchase
+		# Log the purchase
+		if ! Log_Purchase "$Account_Name" "$Purchase_Value" "$Purchase_Message"
+		then
+				echo "The purchase couldn't be logged..." > /dev/stderr
+				echo "The purchase hasn't take effect yet. You can safely cancel it now."
+				echo -e "If you proceed anyway the purchase won't be logged. If you don't then it will be cancelled and won't take effect.\n"
+				read -n 1 -p 'Do you wish to continue? Y/N: ' ; echo
+				case "${REPLY,,}" in
+				y) ;;
+				n) echo 'Purchase canceled' ; return 1 ;;
+				*) echo 'Invalid option, aborting.' > /dev/stderr ; exit 5 ;;
+				esac
+		fi
+
+		# Update the funds
 		Write_Account "$Account_Name" $Remaining_Account_Foundings
 		echo 'Purchase committed successfully'
 		exit 0
-		}
+}
 		( shift 1 ; Purchase_Flow "$@" )
 		exit $?
 fi
