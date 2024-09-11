@@ -309,10 +309,10 @@ Purchase_Flow() {
 		Remaining_Account_Foundings=$(( Account_Current_Foundings - Purchase_Value ))
 	
 		# Displaying the purchase screen
-		if [[ "$Purchase_Message" = "" ]] ; then echo $No_Purchase_Message_Warning ; fi
 		Echo_Account_State "$Account_Name" "$Purchase_Value" "$Account_Current_Foundings" "$Remaining_Account_Foundings"
 		if [[ ! $Remaining_Account_Foundings -gt 0 ]] ; then echo "$Insufficient_Foundings_Message" > /dev/stderr ; exit 0 ; fi
-	
+		if [[ "$Purchase_Message" = "" ]] ; then echo $No_Purchase_Message_Warning ; fi
+
 		read -n 1 -p 'Do you wish to continue? Y/N: ' ; echo
 		if [[ "${REPLY,,}" != y && "${REPLY,,}" != n ]] ; then echo 'Invalid option, aborting.' > /dev/stderr ; exit 5 ; fi
 		if [[ "${REPLY,,}" == n ]]
