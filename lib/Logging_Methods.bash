@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+# set -euo pipefail
 
 Logging_Is_Possible() { # synopsis: Logging_Is_Possible # note: It checks everything is set in order to log something. # returns: 0 if everything is fine, 1 if the file doesn't exist, 2 if it is not a regular file, 3 if it's not writable.
 		declare -r Log_Directory_Path='/data/data/com.termux/files/usr/var/log'
@@ -47,5 +47,103 @@ Log_Purchase() { # synopsis: Log_Purchase Account_Name Purchase_Cost Purchase_Me
 		Purchase_Log_Line=" [Purchase] ${Purchase_DateTime}, over the Account \`${Account_Name}\` with a cost of \`${Purchase_Cost}\`"
 		if [[ "$Purchase_Message" != "" ]] ; then Purchase_Log_Line+=": ${Purchase_Message}" ; fi
 		echo "$Purchase_Log_Line" >> "$Log_File_Path"
+		return 0
+}
+
+Log_Injection() { 
+# Synopsis: Log_Injection <+Int>InjectedMoney <IndexedArray>AccountStates
+# Note:	 Each element of the indexed array represents the state of an account
+#		   and is parsed as follows: AccountName//<Int>AccountPreviousFunds//<Int>AccountNewFunds
+#		   For example: savings//1234//2435
+#		   Which reads that the account `savings` previously had a balance of `1234` *money* and now ot has `2435` *money*
+#		   When invoking the function, simply expand the array as this: "${Accounts[@]}"
+#		   Which could expand for example to: "savings//1234//2435 allowance//5450//10000 selfinvestment//3000//6000"
+
+		if [[ ${1+IsSet} != 'IsSet' ]] ; then echo "Couldn't log injection, missing argument: amount of injected money. Status 1" > /dev/stderr ; return 1 ; fi
+		if ! [[ "$1" =~ ^[0-9]+$ ]] ; then echo "Couldn't log injection, couldn't parse the first argument as a positive, integer, amount of money. Status 2" > /dev/stderr ; return 2 ; fi
+		if [[ $# -lt 2 ]] ; then echo "Couldn't log injection, not enough parameters were given. Status 3" > /dev/stderr ; return 3 ; fi
+		if [[ "$1" -eq 0 ]] ; then "Couldn't log injection, the injection amount was given a value of 0. Status 4" > /dev/stderr ; return 4 ; fi
+		
+		# Account objects format check
+		declare Correct_Object_Syntax='^.+//[0-9]+//[0-9]+$'
+		for Account_Object in "${@:2}"
+		do
+				if ! [[ "$Account_Object" =~ $Correct_Object_Syntax ]]
+				then
+						echo "Couldn't log injection, the argument \`${Account_Object}\` couldn't be parsed as an Account Object. Status 5" > /dev/stderr
+						return 5
+				fi
+		done
+		unset Correct_Object_Syntax
+
+		# Sourcing aka Imports
+		if ! . ~/moneybook/lib/Account_Methods.bash
+		then
+				echo "Logging_methods: Couldn't log purchase, couldn't source \`~/moneybook/lib/Account_Methods\`. Status 6"
+				return 6
+		fi
+
+		declare -r Log_Directory_Path='/data/data/com.termux/files/usr/var/log'
+		declare -r Log_File_Path="${Log_Directory_Path}/moneybook.log"
+		declare -r -i Injection_Value="$1"
+		declare -r -a Account_Objects=( "${@:2}" )
+		declare -r Injection_DateTime="$( date '+%a %b %e %Y %H:%Mhs' )" # The datetime might look like `Sat Aug 31 2024 16:20:57`
+
+		# Log file check
+		Logging_Is_Possible
+		Check_Exit_Status=$?
+		Return_Value_Perhaps=$(( 6 + Check_Exit_Status )) # '6' is the last error code, this way the lowest possible error code would be '7'.
+		case $Check_Exit_Status in
+		0) ;;
+		1) echo "Couldn't log injection, log file doesn't exist. Status ${Return_Value_Perhaps}" > /dev/stderr ; return $Return_Value_Perhaps ;;
+		2) echo "Couldn't log injection, log file is not a regular file. Status ${Return_Value_Perhaps}" > /dev/stderr ; return $Return_Value_Perhaps ;;
+		3) echo "Couldn't log injection, log file is not writable. Status ${Return_Value_Perhaps}" > /dev/stderr ; return $Return_Value_Perhaps ;;
+		*) echo "Couldn't log injection, an unexpected error occurred while making sure everything is fine with the log file, aborting." > /dev/stderr ; return $Return_Value_Perhaps ;;
+		esac
+		unset Check_Exit_Status
+		unset Return_Value_Perhaps
+
+		# Accounts exist check
+		for Account_Object in "${Account_Objects[@]}"
+		do
+				declare Account_Name="$( echo "$Account_Object" | sed 's|//.*$||' )"
+				declare Account_File_Path="${HOME}/moneybook/${Account_Name}"
+				if ! File_Is_Account "$Account_File_Path"
+				then
+						echo "Couldn't log injection, failed Account file check over \`${Account_File_Path}\`. Status 10" > /dev/stderr
+						return 10
+				fi
+		done
+		unset Account_Name
+		unset Account_File_Path
+
+		# Logging the purchase
+		declare Injection_Log_Line
+		Injection_Log_Line=" [Injection] ${Injection_DateTime}, with a value of \`${Injection_Value}\` *money*; "
+		
+		## Record the state of the accounts in the log line
+		for Account_Object in "${Account_Objects[@]}"
+		do
+				declare Account_Name="$(
+					echo "$Account_Object" |
+					sed 's|//.*$||'
+				)"
+				declare Account_Old_Balance="$(
+					echo "$Account_Object" |
+					sed -e 's|^[^/]*//||' -e 's|//.*$||'
+				)"
+				declare Account_New_Balance="$(
+					echo "$Account_Object" |
+					sed -e 's|^.*//||' -e 's|//.*$||'
+				)"
+
+				Injection_Log_Line+="\`${Account_Name}\`( \`${Account_Old_Balance}\` > \`${Account_New_Balance}\`)"
+				if [[ "$Account_Object" != "${Account_Objects[-1]}" ]] ; then Injection_Log_Line+=', ' ; fi
+		done # At this point the log line might look like: [Injection] Sun Sep 4 2026 13:36hs, with a value of `21000` *money*; `savings`( `9000` > `12321` ), `allowance`( `2345` > `32123` ), `selfinvestment`( `10000` > `20000` )
+		unset Account_Name Account_Old_Balance Account_New_Balance
+
+		## Write the line to the log
+		echo "$Injection_Log_Line" >> "$Log_File_Path"
+		unset Injection_Log_Line
 		return 0
 }
