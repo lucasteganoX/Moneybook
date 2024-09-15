@@ -17,11 +17,12 @@ Purcharse management mode:\n
 \t	Purcharse managment mode allows you to stage a purcharse over one of your Accounts. Allowing you to see your current foundings and what would remain if you commit the current purcharse.\n
 \t	Each purchase is logged into the \`moneybook.log\` file, which is under the log directory of the OS. If given a message for the purchase, it gets logged along with the rest of the purchase.\n
 Money injection mode:\n
-\t	Concrete synopsis: ${0} inject 4700\n
-\t	Abstract synopsis: ${0} inject YourIncomingIntegerAmountOfMoney\n
+\t	Concrete synopsis: ${0} inject 4700 'I won the lottery'\n
+\t	Abstract synopsis: ${0} inject YourIncomingIntegerAmountOfMoney [ InjectionLogMessage ]\n
 \n
 \t	Injection mode allows to automatically split any incomming money between all of your Accounts.\n
 \t	It is the mean to get money into the Accounts for free spending.\n
+\t	Each injection is logged into the \`moneybook.log\` file, which is under the log directory of the OS. If given a message for the injection, it gets logged along with the rest of the details.\n
 Money separation mode:\n
 \t	Concrete synopsis: ${0} separate 1200 PhoneBill\n
 \t	Abstract synopsis: ${0} separate AnIncommingPositiveIntegerAmountOfMoney FixedExpenseName\n

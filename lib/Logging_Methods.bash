@@ -97,8 +97,15 @@ Log_Injection() {
 		declare -r Log_Directory_Path='/data/data/com.termux/files/usr/var/log'
 		declare -r Log_File_Path="${Log_Directory_Path}/moneybook.log"
 		declare -r -i Injection_Value="$1"
-		! Parameter_Is_Account_Object "${@: -1}" && declare -r Log_Message="${@: -1}" || declare -r Log_Message=''
-		[[ "$Log_Message" != '' ]] && declare -r -a Account_Objects=( "${@:2}" ) || declare -r -a Account_Objects=( "${@:2:$#-2}" )
+		if ! Parameter_Is_Account_Object "${@: -1}"
+		then
+				declare -r Log_Message="${@: -1}"
+				declare -r -a Account_Objects=( "${@:2:$#-2}" )
+		else
+				declare -r Log_Message=''
+				declare -r -a Account_Objects=( "${@:2}" )
+				
+		fi # This correctly handles both not passing the message argument, and passing an empty string instrad.
 		declare -r Injection_DateTime="$( date '+%a %b %e %Y %H:%Mhs' )" # The datetime might look like `Sat Aug 31 2024 16:20:57`
 
 		# Log file check
