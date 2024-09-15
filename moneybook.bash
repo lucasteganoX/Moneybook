@@ -191,6 +191,25 @@ Inject_Flow() {
 				return 1
 		fi
 
+		# Gather the data
+		# declare -a Account_Objects
+		# declare Account_File_Name
+		# declare -i Account_Share
+		# declare -i Account_Old_Funds
+		# declare -i Account_Income
+		# declare -i Account_New_Funds
+		# for Account_File_Path in $( Get_Accounts )
+		# do
+				# Account_File_Name="$( basename "$Account_File_Path" )"
+				# Account_Share="$( sed -n -e '/^Share=[0-9]\+$/s/^Share=//p' "$Account_File_Path" )"
+				# Account_Income="$( Get_Percentage "$Incoming_Money" "$Account_Share" | cut --delim='.' --field=1 )"
+				# Account_Old_Funds=$( Read_Account "$Account_File_Name" )
+				# Account_New_Funds=$(( Account_Old_Funds + Account_Income ))
+				
+				# Account_Objects+=( "${Account_File_Name}//${Account_Old_Funds}//${Account_New_Funds}" )
+		# done
+		# unset Account_Share Account_Old_Funds Account_Income Account_New_Funds
+
 		# Commit the injection
 		for Share in $( Print_Account_Shares DisplayCorrespondingAccountNames )
 		do
@@ -204,7 +223,7 @@ Inject_Flow() {
 				Account_Share=$( cut --delim=':' --field=2 <<< $Share )
 				Account_Foundings=$( Read_Account "$Account_File_Name" )
 				Account_Income=$( Get_Percentage "$Incoming_Money" "$Account_Share" | cut --delim='.' --field=1 )
-				Account_New_Foundings=$(( Account_Foundings + Account_Income ))
+
 
 				# echo "Account_File_Name = $Account_File_Name"
 				# echo "Account_Share = $Account_Share"
