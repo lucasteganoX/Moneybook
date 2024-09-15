@@ -51,7 +51,7 @@ Log_Purchase() { # synopsis: Log_Purchase Account_Name Purchase_Cost Purchase_Me
 }
 
 Log_Injection() { 
-# Synopsis: Log_Injection <+Int>InjectedMoney <IndexedArray>AccountStates
+# Synopsis: Log_Injection <+Int>InjectedMoney <IndexedArray>AccountStates [<String(No_Escape_Interpretation)>Log_Message]
 # Note:	 Each element of the indexed array represents the state of an account
 #		   and is parsed as follows: AccountName//<Int>AccountPreviousFunds//<Int>AccountNewFunds
 #		   For example: savings//1234//2435
