@@ -57,24 +57,35 @@ Log_Injection() {
 #		   For example: savings//1234//2435
 #		   Which reads that the account `savings` previously had a balance of `1234` *money* and now ot has `2435` *money*
 #		   When invoking the function, simply expand the array as this: "${Accounts[@]}"
-#		   Which could expand for example to: "savings//1234//2435 allowance//5450//10000 selfinvestment//3000//6000"
+#		   Which could expand for example to: "savings//1234//2435 allowance//5450//10000 selfinvestment//3000//6000"		   
+		Parameter_Is_Account_Object() {
+				declare -r Correct_Object_Syntax='^.+//[0-9]+//[0-9]+$'
+				declare -r Account_Object="$1"
+
+				[[ "$Account_Object" =~ $Correct_Object_Syntax ]]
+				return # This will return the result of the previous expression
+		}
 
 		if [[ ${1+IsSet} != 'IsSet' ]] ; then echo "Couldn't log injection, missing argument: amount of injected money. Status 1" > /dev/stderr ; return 1 ; fi
 		if ! [[ "$1" =~ ^[0-9]+$ ]] ; then echo "Couldn't log injection, couldn't parse the first argument as a positive, integer, amount of money. Status 2" > /dev/stderr ; return 2 ; fi
 		if [[ $# -lt 2 ]] ; then echo "Couldn't log injection, not enough parameters were given. Status 3" > /dev/stderr ; return 3 ; fi
 		if [[ "$1" -eq 0 ]] ; then "Couldn't log injection, the injection amount was given a value of 0. Status 4" > /dev/stderr ; return 4 ; fi
-		
+
 		# Account objects format check
-		declare Correct_Object_Syntax='^.+//[0-9]+//[0-9]+$'
-		for Account_Object in "${@:2}"
+		for Parameter in "${@:2}"
 		do
-				if ! [[ "$Account_Object" =~ $Correct_Object_Syntax ]]
+				if ! Parameter_Is_Account_Object "$Parameter" 
 				then
-						echo "Couldn't log injection, the argument \`${Account_Object}\` couldn't be parsed as an Account Object. Status 5" > /dev/stderr
+						if [[ "$Parameter" = "${@: -1}" ]]
+						then
+								# This means the last parameter is the
+								# log message, and not an Account Object
+								continue
+						fi
+						echo "Couldn't log injection, the argument \`${Parameter}\` couldn't be parsed as an Account Object. Status 5" > /dev/stderr
 						return 5
 				fi
 		done
-		unset Correct_Object_Syntax
 
 		# Sourcing aka Imports
 		if ! . ~/moneybook/lib/Account_Methods.bash
@@ -86,7 +97,8 @@ Log_Injection() {
 		declare -r Log_Directory_Path='/data/data/com.termux/files/usr/var/log'
 		declare -r Log_File_Path="${Log_Directory_Path}/moneybook.log"
 		declare -r -i Injection_Value="$1"
-		declare -r -a Account_Objects=( "${@:2}" )
+		! Parameter_Is_Account_Object "${@: -1}" && declare -r Log_Message="${@: -1}" || declare -r Log_Message=''
+		[[ "$Log_Message" != '' ]] && declare -r -a Account_Objects=( "${@:2}" ) || declare -r -a Account_Objects=( "${@:2:$#-2}" )
 		declare -r Injection_DateTime="$( date '+%a %b %e %Y %H:%Mhs' )" # The datetime might look like `Sat Aug 31 2024 16:20:57`
 
 		# Log file check
@@ -139,7 +151,9 @@ Log_Injection() {
 
 				Injection_Log_Line+="\`${Account_Name}\`( \`${Account_Old_Balance}\` > \`${Account_New_Balance}\`)"
 				if [[ "$Account_Object" != "${Account_Objects[-1]}" ]] ; then Injection_Log_Line+=', ' ; fi
-		done # At this point the log line might look like: [Injection] Sun Sep 4 2026 13:36hs, with a value of `21000` *money*; `savings`( `9000` > `12321` ), `allowance`( `2345` > `32123` ), `selfinvestment`( `10000` > `20000` )
+		done
+		if [[ "$Log_Message" != '' ]] ; then Injection_Log_Line+=": ${Log_Message}" ; fi
+		# At this point the log line might look like: [Injection] Sun Sep 4 2026 13:36hs, with a value of `21000` *money*; `savings`( `9000` > `12321` ), `allowance`( `2345` > `32123` ), `selfinvestment`( `10000` > `20000` )
 		unset Account_Name Account_Old_Balance Account_New_Balance
 
 		## Write the line to the log
