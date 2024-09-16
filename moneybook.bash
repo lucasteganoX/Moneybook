@@ -153,6 +153,12 @@ Inject_Flow() {
 				return 99
 		fi
 
+		# if ! . ~/moneybook/lib/Logging_Methods.bash
+		# then
+				# echo "Couldn't source \`~/moneybook/lib/Logging_Methods.bash\` which cointains necessary proceedures to log Injections" > /dev/stderr
+				# return 100
+		# fi
+
 		if ! Splitting_Is_Total
 		then
 				echo 'The split cannot be done because the sum of the shares among all Accounts does not equal a 100% of any incoming money.' > /dev/stderr
@@ -209,6 +215,20 @@ Inject_Flow() {
 				# Account_Objects+=( "${Account_File_Name}//${Account_Old_Funds}//${Account_New_Funds}" )
 		# done
 		# unset Account_Share Account_Old_Funds Account_Income Account_New_Funds
+
+		# Log the injection
+		# if ! Log_Injection "$Incoming_Money" "${Account_Objects[@]}" # "$Log_Message"
+		# then
+				# echo "The injection couldn't be logged..." > /dev/stderr
+				# echo "The injection hasn't take effect yet. You can safely cancel it now."
+				# echo -e "If you proceed anyway the injection won't be logged. If you don't then it will be cancelled and won't take effect.\n"
+				# read -n 1 -p 'Do you wish to continue? Y/N: ' ; echo
+				# case "${REPLY,,}" in
+				# y) ;;
+				# n) echo 'Injection canceled' ; return 1 ;;
+				#*) echo 'Invalid option, aborting.' > /dev/stderr ; return 5 ;;
+				# esac
+		# fi
 
 		# Commit the injection
 		for Share in $( Print_Account_Shares DisplayCorrespondingAccountNames )
