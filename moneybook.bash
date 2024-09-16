@@ -153,11 +153,11 @@ Inject_Flow() {
 				return 99
 		fi
 
-		# if ! . ~/moneybook/lib/Logging_Methods.bash
-		# then
-				# echo "Couldn't source \`~/moneybook/lib/Logging_Methods.bash\` which cointains necessary proceedures to log Injections" > /dev/stderr
-				# return 100
-		# fi
+		if ! . ~/moneybook/lib/Logging_Methods.bash
+		then
+				echo "Couldn't source \`~/moneybook/lib/Logging_Methods.bash\` which cointains necessary proceedures to log Injections" > /dev/stderr
+				return 100
+		fi
 
 		if ! Splitting_Is_Total
 		then
@@ -198,84 +198,57 @@ Inject_Flow() {
 		fi
 
 		# Gather the data
-		# declare -a Account_Objects
-		# declare Account_File_Name
-		# declare -i Account_Share
-		# declare -i Account_Old_Funds
-		# declare -i Account_Income
-		# declare -i Account_New_Funds
-		# for Account_File_Path in $( Get_Accounts )
-		# do
-				# Account_File_Name="$( basename "$Account_File_Path" )"
-				# Account_Share="$( sed -n -e '/^Share=[0-9]\+$/s/^Share=//p' "$Account_File_Path" )"
-				# Account_Income="$( Get_Percentage "$Incoming_Money" "$Account_Share" | cut --delim='.' --field=1 )"
-				# Account_Old_Funds=$( Read_Account "$Account_File_Name" )
-				# Account_New_Funds=$(( Account_Old_Funds + Account_Income ))
-				
-				# Account_Objects+=( "${Account_File_Name}//${Account_Old_Funds}//${Account_New_Funds}" )
-		# done
-		# unset Account_Share Account_Old_Funds Account_Income Account_New_Funds
+		declare -a Account_Objects
+		declare Account_File_Name
+		declare -i Account_Share
+		declare -i Account_Old_Funds
+		declare -i Account_Income
+		declare -i Account_New_Funds
+		for Account_File_Path in $( Get_Accounts )
+		do
+				Account_File_Name="$( basename "$Account_File_Path" )"
+				Account_Share="$( sed -n -e '/^Share=[0-9]\+$/s/^Share=//p' "$Account_File_Path" )"
+				Account_Income="$( Get_Percentage "$Incoming_Money" "$Account_Share" | cut --delim='.' --field=1 )"
+				Account_Old_Funds=$( Read_Account "$Account_File_Name" )
+				Account_New_Funds=$(( Account_Old_Funds + Account_Income ))
+
+				Account_Objects+=( "${Account_File_Name}//${Account_Old_Funds}//${Account_New_Funds}" )
+		done
+		unset Account_Share Account_Old_Funds Account_Income Account_New_Funds
 
 		# Log the injection
-		# if ! Log_Injection "$Incoming_Money" "${Account_Objects[@]}" # "$Log_Message"
-		# then
-				# echo "The injection couldn't be logged..." > /dev/stderr
-				# echo "The injection hasn't take effect yet. You can safely cancel it now."
-				# echo -e "If you proceed anyway the injection won't be logged. If you don't then it will be cancelled and won't take effect.\n"
-				# read -n 1 -p 'Do you wish to continue? Y/N: ' ; echo
-				# case "${REPLY,,}" in
-				# y) ;;
-				# n) echo 'Injection canceled' ; return 1 ;;
-				#*) echo 'Invalid option, aborting.' > /dev/stderr ; return 5 ;;
-				# esac
-		# fi
+		if ! Log_Injection "$Incoming_Money" "${Account_Objects[@]}" # "$Log_Message"
+		then
+				echo "The injection couldn't be logged..." > /dev/stderr
+				echo "The injection hasn't take effect yet. You can safely cancel it now."
+				echo -e "If you proceed anyway the injection won't be logged. If you don't then it will be cancelled and won't take effect.\n"
+				read -n 1 -p 'Do you wish to continue? Y/N: ' ; echo
+				case "${REPLY,,}" in
+				y) ;;
+				n) echo 'Injection canceled' ; return 1 ;;
+				*) echo 'Invalid option, aborting.' > /dev/stderr ; return 5 ;;
+				esac
+		fi
 
 		# Commit the injection
-		# declare +r Account_File_Name
-		# declare +r Account_Old_Funds
-		# declare +r Account_New_Funds
-		# for Account_Object in "${Account_Objects[@]}"
-		# do
-				# Account_File_Name="$( sed 's|//.*$||' <<< "$Account_Object" )"
-				# Account_Old_Funds="$( sed 's|^[^/]*//||; s|//.*$||' <<< "$Account_Object" )"
-				# Account_New_Funds="$( sed 's|^.*//||' <<< "$Account_Object" )"
-
-				# if ! Write_Account "$Account_File_Name" "$Account_New_Funds"
-				# then
-						# echo -e "Couldn\'t add(write) \`${Account_Income}\` to the Account \`${Account_File_Name}\`. Status 6" > /dev/stderr
-						# return 6
-				# fi
-				# echo "Updated funds for Account: $Account_File_Name ( $Account_Old_Funds > $Account_New_Funds )"
-		# done
-
-		# Commit the injection
-		for Share in $( Print_Account_Shares DisplayCorrespondingAccountNames )
+		declare +r Account_File_Name
+		declare +r Account_Old_Funds
+		declare +r Account_New_Funds
+		for Account_Object in "${Account_Objects[@]}"
 		do
-				declare Account_File_Name
-				declare -i Account_Share
-				declare -i Account_Foundings
-				declare -i Account_Income
-				declare -i Account_New_Foundings
+				Account_File_Name="$( sed 's|//.*$||' <<< "$Account_Object" )"
+				Account_Old_Funds="$( sed 's|^[^/]*//||; s|//.*$||' <<< "$Account_Object" )"
+				Account_New_Funds="$( sed 's|^.*//||' <<< "$Account_Object" )"
 
-				Account_File_Name="$( cut --delim=':' --field=1 <<< $Share )"
-				Account_Share=$( cut --delim=':' --field=2 <<< $Share )
-				Account_Foundings=$( Read_Account "$Account_File_Name" )
-				Account_Income=$( Get_Percentage "$Incoming_Money" "$Account_Share" | cut --delim='.' --field=1 )
-
-
-				# echo "Account_File_Name = $Account_File_Name"
-				# echo "Account_Share = $Account_Share"
-				# echo "Account_Foundings = $Account_Foundings"
-				# echo "Account_Income = $Account_Income"
-				# echo "Account_New_Foundings = $Account_New_Foundings"
-
-				if ! Write_Account "$Account_File_Name" "$Account_New_Foundings"
+				if ! Write_Account "$Account_File_Name" "$Account_New_Funds"
 				then
-						echo -e "Couldn\'t add(write) $Account_Income to the Account \`${Account_File_Name}\`. Status: $?" > /dev/stderr
+						echo -e "Couldn\'t add(write) \`${Account_Income}\` to the Account \`${Account_File_Name}\`. Status 6" > /dev/stderr
 						return 6
 				fi
-				echo "Updated foundings for Account: $Account_File_Name ( $Account_Foundings > $Account_New_Foundings )"
+				echo "Updated funds for Account: $Account_File_Name ( $Account_Old_Funds > $Account_New_Funds )"
 		done
+		unset Account_File_Name Account_Old_Funds Account_New_Funds
+
 		echo 'Injection completed :)'
 		return 0
 }
