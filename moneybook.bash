@@ -231,6 +231,24 @@ Inject_Flow() {
 		# fi
 
 		# Commit the injection
+		# declare +r Account_File_Name
+		# declare +r Account_Old_Funds
+		# declare +r Account_New_Funds
+		# for Account_Object in "${Account_Objects[@]}"
+		# do
+				# Account_File_Name="$( sed 's|//.*$||' <<< "$Account_Object" )"
+				# Account_Old_Funds="$( sed 's|^[^/]*//||; s|//.*$||' <<< "$Account_Object" )"
+				# Account_New_Funds="$( sed 's|^.*//||' <<< "$Account_Object" )"
+
+				# if ! Write_Account "$Account_File_Name" "$Account_New_Funds"
+				# then
+						# echo -e "Couldn\'t add(write) \`${Account_Income}\` to the Account \`${Account_File_Name}\`. Status 6" > /dev/stderr
+						# return 6
+				# fi
+				# echo "Updated funds for Account: $Account_File_Name ( $Account_Old_Funds > $Account_New_Funds )"
+		# done
+
+		# Commit the injection
 		for Share in $( Print_Account_Shares DisplayCorrespondingAccountNames )
 		do
 				declare Account_File_Name
