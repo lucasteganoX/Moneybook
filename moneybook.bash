@@ -138,14 +138,16 @@ Inject_Flow() {
 		# Argument quantity check
 		declare Argument_Quantity_Error=''
 		if [[ ${1:+IsSet} != 'IsSet' ]] ; then Argument_Quantity_Error='Missing argument for injection: Amount of incoming money' ; fi
-		if [[ ${2+IsSet} = 'IsSet' ]] ; then Argument_Quantity_Error='Extra argument/s were supplied for injection. Aborting just in case' ; fi
+		if [[ ${3+IsSet} = 'IsSet' ]] ; then Argument_Quantity_Error='Extra argument/s were supplied for injection. Aborting just in case' ; fi
 		if [[ "$Argument_Quantity_Error" != '' ]]
 		then
 				echo "$Argument_Quantity_Error" > /dev/stderr
 				return 2
 		fi
 		unset Argument_Quantity_Error
+
 		declare Incoming_Money="$1"
+		declare Log_Message="${2-}"
 
 		if ! . ~/moneybook/lib/Account_Methods.bash
 		then
@@ -217,7 +219,7 @@ Inject_Flow() {
 		unset Account_Share Account_Old_Funds Account_Income Account_New_Funds
 
 		# Log the injection
-		if ! Log_Injection "$Incoming_Money" "${Account_Objects[@]}" # "$Log_Message"
+		if ! Log_Injection "$Incoming_Money" "${Account_Objects[@]}" "$Log_Message"
 		then
 				echo "The injection couldn't be logged..." > /dev/stderr
 				echo "The injection hasn't take effect yet. You can safely cancel it now."
