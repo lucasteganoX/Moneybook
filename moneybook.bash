@@ -17,11 +17,12 @@ Purcharse management mode:\n
 \t	Purcharse managment mode allows you to stage a purcharse over one of your Accounts. Allowing you to see your current foundings and what would remain if you commit the current purcharse.\n
 \t	Each purchase is logged into the \`moneybook.log\` file, which is under the log directory of the OS. If given a message for the purchase, it gets logged along with the rest of the purchase.\n
 Money injection mode:\n
-\t	Concrete synopsis: ${0} inject 4700\n
-\t	Abstract synopsis: ${0} inject YourIncomingIntegerAmountOfMoney\n
+\t	Concrete synopsis: ${0} inject 4700 'I won the lottery'\n
+\t	Abstract synopsis: ${0} inject YourIncomingIntegerAmountOfMoney [ InjectionLogMessage ]\n
 \n
 \t	Injection mode allows to automatically split any incomming money between all of your Accounts.\n
 \t	It is the mean to get money into the Accounts for free spending.\n
+\t	Each injection is logged into the \`moneybook.log\` file, which is under the log directory of the OS. If given a message for the injection, it gets logged along with the rest of the details.\n
 Money separation mode:\n
 \t	Concrete synopsis: ${0} separate 1200 PhoneBill\n
 \t	Abstract synopsis: ${0} separate AnIncommingPositiveIntegerAmountOfMoney FixedExpenseName\n
@@ -45,21 +46,23 @@ Unrecognized mode of operation: ${1-nothing}. Refer to the help message by execu
 # _______________________________
 # ------------- Injection mode --
 # Helper functions
-Print_Account_Shares() { # Synopsis: Print_Account_Shares ['DisplayAccountNames'] # Abstract: Displays the shares of all Accounts, if any argument is given displays the Account each value corresponds
-		Get_Accounts() {
-		# All this problem could be avoided if the Accounts were in a directory for themselves
-		# rather than in the root dir of the program among all other files
-		# attention: if a file without an extension other than an Account gets into the root dir
-		# it will have nasty consequences. Like a LOG file for example.
-				for File in ~/moneybook/*
-				do
-						if [[ -d $File ]] ; then continue ; fi
-						if [[ -L $File ]] ; then continue ; fi
-						if ! File_Is_Account "$File" ; then continue ; fi
-						echo "$File"
-				done
-		}
 
+Get_Accounts() {
+# Note: This was an inner function of 'Print_Account_Shares'.
+# All this problem could be avoided if the Accounts were in a directory for themselves
+# rather than in the root dir of the program among all other files
+# attention: if a file without an extension other than an Account gets into the root dir
+# it will have nasty consequences. Like a LOG file for example.
+		for File in ~/moneybook/*
+		do
+				if [[ -d $File ]] ; then continue ; fi
+				if [[ -L $File ]] ; then continue ; fi
+				if ! File_Is_Account "$File" ; then continue ; fi
+				echo "$File"
+		done
+}
+
+Print_Account_Shares() { # Synopsis: Print_Account_Shares ['DisplayAccountNames'] # Abstract: Displays the shares of all Accounts, if any argument is given displays the Account each value corresponds
 		declare Shares="$( grep --color=never --with-filename 'Share=' $( Get_Accounts ))"
 		if [[ ${1+Parameter1WasNotPassed} != 'Parameter1WasNotPassed' ]] ; then cut --delim='=' --field=2 <<< $Shares ; return 0 ; fi
 		grep --color=never -o '[^/]*$' <<< $Shares |
@@ -135,19 +138,27 @@ Inject_Flow() {
 		# Argument quantity check
 		declare Argument_Quantity_Error=''
 		if [[ ${1:+IsSet} != 'IsSet' ]] ; then Argument_Quantity_Error='Missing argument for injection: Amount of incoming money' ; fi
-		if [[ ${2+IsSet} = 'IsSet' ]] ; then Argument_Quantity_Error='Extra argument/s were supplied for injection. Aborting just in case' ; fi
+		if [[ ${3+IsSet} = 'IsSet' ]] ; then Argument_Quantity_Error='Extra argument/s were supplied for injection. Aborting just in case' ; fi
 		if [[ "$Argument_Quantity_Error" != '' ]]
 		then
 				echo "$Argument_Quantity_Error" > /dev/stderr
 				return 2
 		fi
 		unset Argument_Quantity_Error
+
 		declare Incoming_Money="$1"
+		declare Log_Message="${2-}"
 
 		if ! . ~/moneybook/lib/Account_Methods.bash
 		then
 				echo "Couldn't source \`~/moneybook/bin/Account_Methods.bash\` file containing necessary proceedures to treat Accounts." > /dev/stderr
 				return 99
+		fi
+
+		if ! . ~/moneybook/lib/Logging_Methods.bash
+		then
+				echo "Couldn't source \`~/moneybook/lib/Logging_Methods.bash\` which cointains necessary proceedures to log Injections" > /dev/stderr
+				return 100
 		fi
 
 		if ! Splitting_Is_Total
@@ -188,34 +199,58 @@ Inject_Flow() {
 				return 1
 		fi
 
-		# Commit the injection
-		for Share in $( Print_Account_Shares DisplayCorrespondingAccountNames )
+		# Gather the data
+		declare -a Account_Objects
+		declare Account_File_Name
+		declare -i Account_Share
+		declare -i Account_Old_Funds
+		declare -i Account_Income
+		declare -i Account_New_Funds
+		for Account_File_Path in $( Get_Accounts )
 		do
-				declare Account_File_Name
-				declare -i Account_Share
-				declare -i Account_Foundings
-				declare -i Account_Income
-				declare -i Account_New_Foundings
+				Account_File_Name="$( basename "$Account_File_Path" )"
+				Account_Share="$( sed -n -e '/^Share=[0-9]\+$/s/^Share=//p' "$Account_File_Path" )"
+				Account_Income="$( Get_Percentage "$Incoming_Money" "$Account_Share" | cut --delim='.' --field=1 )"
+				Account_Old_Funds=$( Read_Account "$Account_File_Name" )
+				Account_New_Funds=$(( Account_Old_Funds + Account_Income ))
 
-				Account_File_Name="$( cut --delim=':' --field=1 <<< $Share )"
-				Account_Share=$( cut --delim=':' --field=2 <<< $Share )
-				Account_Foundings=$( Read_Account "$Account_File_Name" )
-				Account_Income=$( Get_Percentage "$Incoming_Money" "$Account_Share" | cut --delim='.' --field=1 )
-				Account_New_Foundings=$(( Account_Foundings + Account_Income ))
+				Account_Objects+=( "${Account_File_Name}//${Account_Old_Funds}//${Account_New_Funds}" )
+		done
+		unset Account_Share Account_Old_Funds Account_Income Account_New_Funds
 
-				# echo "Account_File_Name = $Account_File_Name"
-				# echo "Account_Share = $Account_Share"
-				# echo "Account_Foundings = $Account_Foundings"
-				# echo "Account_Income = $Account_Income"
-				# echo "Account_New_Foundings = $Account_New_Foundings"
+		# Log the injection
+		if ! Log_Injection "$Incoming_Money" "${Account_Objects[@]}" "$Log_Message"
+		then
+				echo "The injection couldn't be logged..." > /dev/stderr
+				echo "The injection hasn't take effect yet. You can safely cancel it now."
+				echo -e "If you proceed anyway the injection won't be logged. If you don't then it will be cancelled and won't take effect.\n"
+				read -n 1 -p 'Do you wish to continue? Y/N: ' ; echo
+				case "${REPLY,,}" in
+				y) ;;
+				n) echo 'Injection canceled' ; return 1 ;;
+				*) echo 'Invalid option, aborting.' > /dev/stderr ; return 5 ;;
+				esac
+		fi
 
-				if ! Write_Account "$Account_File_Name" "$Account_New_Foundings"
+		# Commit the injection
+		declare +r Account_File_Name
+		declare +r Account_Old_Funds
+		declare +r Account_New_Funds
+		for Account_Object in "${Account_Objects[@]}"
+		do
+				Account_File_Name="$( sed 's|//.*$||' <<< "$Account_Object" )"
+				Account_Old_Funds="$( sed 's|^[^/]*//||; s|//.*$||' <<< "$Account_Object" )"
+				Account_New_Funds="$( sed 's|^.*//||' <<< "$Account_Object" )"
+
+				if ! Write_Account "$Account_File_Name" "$Account_New_Funds"
 				then
-						echo -e "Couldn\'t add(write) $Account_Income to the Account \`${Account_File_Name}\`. Status: $?" > /dev/stderr
+						echo -e "Couldn\'t add(write) \`${Account_Income}\` to the Account \`${Account_File_Name}\`. Status 6" > /dev/stderr
 						return 6
 				fi
-				echo "Updated foundings for Account: $Account_File_Name ( $Account_Foundings > $Account_New_Foundings )"
+				echo "Updated funds for Account: $Account_File_Name ( $Account_Old_Funds > $Account_New_Funds )"
 		done
+		unset Account_File_Name Account_Old_Funds Account_New_Funds
+
 		echo 'Injection completed :)'
 		return 0
 }
