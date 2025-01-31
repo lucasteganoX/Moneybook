@@ -45,9 +45,8 @@ Incorrect_Mode_Message="
 Unrecognized mode of operation: ${1-nothing}. Refer to the help message by executing the command without argument, or using the help flag (--help).
 "
 
-# _______________________________
-# ------------- Injection mode --
-# Helper functions
+# _________________________________
+# ------------- Helper functions --
 
 Get_Accounts() {
 # Note: This was an inner function of 'Print_Account_Shares'.
@@ -135,7 +134,9 @@ Echo_Unfulfilled_Expenses_Warnings() { # outputs: A warning message for each unf
 		echo -e "$Warning_Table\n" | column -t -s,
 }
 
-# Flow
+# _________________________________
+# ------------- Mode flows --------
+
 Inject_Flow() {
 		declare +r Incoming_Money
 		declare +r Log_Message
@@ -326,44 +327,6 @@ Inject_Flow() {
 		return 0
 }
 
-# ___________________________
-# ------------- Main -------
-
-# Bounce backs
-if [[ $# -eq 0 ]] ; then echo -e $Command_Help_Message ; exit 1 ; fi
-if [[ "$1" == 'help' || "$1" == '--help' ]] ; then echo -e $Command_Help_Message ; exit 1 ; fi
-if [[ "$1" != 'purchase' && "$1" != 'inject' && "$1" != 'separate' && "$1" != 'pay' ]] ; then echo -e "$Incorrect_Mode_Message" ; exit 1 ; fi
-
-# Purchase management mode
-Echo_Account_State() { # Echo_Account_State MyAccountName PurchaseIntegerValueyAccount CurrentFoundings Remaining_Account_Foundings
-		declare -r Account_Name="$1"
-		declare -ri Purchase_Value=$2
-		declare -ri Account_Current_Foundings=$3
-		declare -ri Remaining_Account_Foundings=$4
-
-		# this is a start up responsability over the mode, and a responsability when reading or writing to an Account # if [[ ! -f "$Account_Name" ]] ; then return 1 ; fi
-		if [[ $# -ne 4 ]]
-		then
-				echo "Cannot echo account state as the amount of parameters is incorrect." > /dev/stderr
-				exit 2
-		fi
-
-		echo -e "
-		${Account_Name}'s current foundings: ${Account_Current_Foundings}
-		Current purchase: ${Purchase_Value}
-		Remaining foundings after purchase: ${Remaining_Account_Foundings}\n
-		"
-		return 0
-}
-Insufficient_Foundings_Message='
-The Account you selected does not have enough money for that transaction. Sorry :(
-'
-No_Purchase_Message_Warning='
-Warning: no purchase message was supplied!
-'
-
-if [[ "$1" == 'purchase' ]]
-then
 Purchase_Flow() {
 
 		declare +r Account_Name
@@ -506,6 +469,14 @@ Purchase_Flow() {
 
 		Remaining_Account_Foundings=$(( Account_Current_Foundings - Purchase_Value ))
 	
+		# Handling groceries' tickets
+		# echo "Either the word \`Grocery\` or \`Groceries\` was detected. Log a photo of the ticket?"
+		# read -n 1 -p 'Do you wish to capture the ticket? Y/N: ' ; echo
+		# if [[ "${REPLY,,}" != y && "${REPLY,,}" != n ]] ; then echo 'Invalid option, aborting.' > /dev/stderr ; exit 5 ; fi
+		# if [[ "${REPLY,,}" == n ]]
+		# else
+		# fi
+
 		# Displaying the purchase screen
 		Echo_Account_State "$Account_Name" "$Purchase_Value" "$Account_Current_Foundings" "$Remaining_Account_Foundings"
 		if [[ ! $Remaining_Account_Foundings -gt 0 ]] ; then echo "$Insufficient_Foundings_Message" > /dev/stderr ; exit 0 ; fi
@@ -538,6 +509,133 @@ Purchase_Flow() {
 		echo 'Purchase committed successfully'
 		exit 0
 }
+
+Payment_Flow() {
+		if ! . ~/moneybook/lib/Expense_Methods.bash
+		then
+				echo "Couldn't source \`~/moneybook/lib/Expense_Methods.bash\` file containing necessary proceedures to treat Fixed Expenses. Status: 2" > /dev/stderr
+				return 2
+		fi
+
+		if [[ ${1+IsSet} != 'IsSet' ]]
+		then
+				echo "Couldn't pay expense, missing argument: Expense name. Status: 3" > /dev/stderr
+				return 3
+		fi
+
+		if [[ ${3+IsSet} = 'IsSet' ]]
+		then
+				echo "Couldn't pay expense, too much arguments. Status: 4" > /dev/stderr
+				return 4
+		fi
+		
+		declare Expense_Name="$1"
+		declare +i Payment_Cost
+		declare -i Expense_Funds
+		declare -i Postransaction_Expense_Funds
+
+		local +r -i Name_Is_Expense_Status=$( Name_Is_Expense "$Expense_Name" 2> /dev/null ; echo $? ) # it would be nice to be able to invoke `Name_Is_Expense --echo "$Expense_Name" 2> /dev/null` to echo its exit status directly
+		if ! ( return $Name_Is_Expense_Status )
+		then
+				if [[ $Name_Is_Expense_Status -eq 2 ]] ; then echo "Couldn't pay expense, \`${Expense_Name}\`, no such file or directory."
+				else echo "Couldn't pay expense, the name \`${Expense_Name}\` is not a correct Fixed Account file. Status: 5" > /dev/stderr ; fi
+				return 5
+		fi
+		unset Name_Is_Expense_Status
+		
+		## Assign the variables
+		# Define the cost of the payment
+		if [[ ${2:+IsPresent} = 'IsPresent'  ]]
+		then
+				if [[ ! "$2" =~ [0-9]+$ ]]
+				then
+						echo "Couldn't parse the cost of the payment as a positive integer. Status: 6" > /dev/stderr
+						return 6
+				fi
+				declare -i Payment_Cost="$2"
+		else
+				if ! Payment_Cost="$( Read_Expense_Budget "$Expense_Name" )"
+				then
+						echo "Couldn't get the budget of the Expense to use it as the cost of the payment. Status: 7" > /dev/stderr
+						return 7
+				fi
+				declare -i Payment_Cost
+		fi
+		if ! Expense_Funds="$( Read_Expense_Funds "$Expense_Name" )"
+		then
+				echo "; Couldn't get current funds of the Expense. Status: 8"
+				return 8
+		fi
+		Postransaction_Expense_Funds=$(( Expense_Funds - Payment_Cost ))
+
+		## Display payment screen
+		Payment_Message="
+		The payment of \`${Payment_Cost}\` will be done over the Fixed Expense \`${Expense_Name}\`\n
+		\t	Expense funds: ${Expense_Funds}\n
+		\t	Payment Cost: ${Payment_Cost}\n
+		\t	Remaining funds after payment: ${Postransaction_Expense_Funds}\n
+		"
+		echo -e $Payment_Message
+		unset Payment_Message
+
+		# Ask for confirmation
+		read -n 1 -p 'Proceed with the payment? Y/N: ' ; echo
+		if [[ "${REPLY,,}" != y && "${REPLY,,}" != n ]] ; then echo 'Invalid option, aborting.' > /dev/stderr ; return 8 ; fi
+		if [[ "${REPLY,,}" == n ]]
+		then
+				echo -e 'Payment canceled.'
+				return 1
+		fi
+
+		## Commit the payment
+		if ! Write_Expense "$Expense_Name" "$Postransaction_Expense_Funds"
+		then
+				echo "; Couldn't take off the money for the payment off the Expense. Status: 9"
+				return 9
+		fi
+
+		echo 'Payment committed successfully :)'
+		return 0
+		}
+
+# ___________________________
+# ------------- Main -------
+
+# Bounce backs
+if [[ $# -eq 0 ]] ; then echo -e $Command_Help_Message ; exit 1 ; fi
+if [[ "$1" == 'help' || "$1" == '--help' ]] ; then echo -e $Command_Help_Message ; exit 1 ; fi
+if [[ "$1" != 'purchase' && "$1" != 'inject' && "$1" != 'separate' && "$1" != 'pay' ]] ; then echo -e "$Incorrect_Mode_Message" ; exit 1 ; fi
+
+# Purchase management mode
+Echo_Account_State() { # Echo_Account_State MyAccountName PurchaseIntegerValueyAccount CurrentFoundings Remaining_Account_Foundings
+		declare -r Account_Name="$1"
+		declare -ri Purchase_Value=$2
+		declare -ri Account_Current_Foundings=$3
+		declare -ri Remaining_Account_Foundings=$4
+
+		# this is a start up responsability over the mode, and a responsability when reading or writing to an Account # if [[ ! -f "$Account_Name" ]] ; then return 1 ; fi
+		if [[ $# -ne 4 ]]
+		then
+				echo "Cannot echo account state as the amount of parameters is incorrect." > /dev/stderr
+				exit 2
+		fi
+
+		echo -e "
+		${Account_Name}'s current foundings: ${Account_Current_Foundings}
+		Current purchase: ${Purchase_Value}
+		Remaining foundings after purchase: ${Remaining_Account_Foundings}\n
+		"
+		return 0
+}
+Insufficient_Foundings_Message='
+The Account you selected does not have enough money for that transaction. Sorry :(
+'
+No_Purchase_Message_Warning='
+Warning: no purchase message was supplied!
+'
+
+if [[ "$1" == 'purchase' ]]
+then
 		( shift 1 ; Purchase_Flow "$@" )
 		exit $?
 fi
@@ -671,94 +769,6 @@ then
 fi
 if [[ "$1" = 'pay' ]]
 then
-		Payment_Flow() {
-		if ! . ~/moneybook/lib/Expense_Methods.bash
-		then
-				echo "Couldn't source \`~/moneybook/lib/Expense_Methods.bash\` file containing necessary proceedures to treat Fixed Expenses. Status: 2" > /dev/stderr
-				return 2
-		fi
-
-		if [[ ${1+IsSet} != 'IsSet' ]]
-		then
-				echo "Couldn't pay expense, missing argument: Expense name. Status: 3" > /dev/stderr
-				return 3
-		fi
-
-		if [[ ${3+IsSet} = 'IsSet' ]]
-		then
-				echo "Couldn't pay expense, too much arguments. Status: 4" > /dev/stderr
-				return 4
-		fi
-		
-		declare Expense_Name="$1"
-		declare +i Payment_Cost
-		declare -i Expense_Funds
-		declare -i Postransaction_Expense_Funds
-
-		local +r -i Name_Is_Expense_Status=$( Name_Is_Expense "$Expense_Name" 2> /dev/null ; echo $? ) # it would be nice to be able to invoke `Name_Is_Expense --echo "$Expense_Name" 2> /dev/null` to echo its exit status directly
-		if ! ( return $Name_Is_Expense_Status )
-		then
-				if [[ $Name_Is_Expense_Status -eq 2 ]] ; then echo "Couldn't pay expense, \`${Expense_Name}\`, no such file or directory."
-				else echo "Couldn't pay expense, the name \`${Expense_Name}\` is not a correct Fixed Account file. Status: 5" > /dev/stderr ; fi
-				return 5
-		fi
-		unset Name_Is_Expense_Status
-		
-		## Assign the variables
-		# Define the cost of the payment
-		if [[ ${2:+IsPresent} = 'IsPresent'  ]]
-		then
-				if [[ ! "$2" =~ [0-9]+$ ]]
-				then
-						echo "Couldn't parse the cost of the payment as a positive integer. Status: 6" > /dev/stderr
-						return 6
-				fi
-				declare -i Payment_Cost="$2"
-		else
-				if ! Payment_Cost="$( Read_Expense_Budget "$Expense_Name" )"
-				then
-						echo "Couldn't get the budget of the Expense to use it as the cost of the payment. Status: 7" > /dev/stderr
-						return 7
-				fi
-				declare -i Payment_Cost
-		fi
-		if ! Expense_Funds="$( Read_Expense_Funds "$Expense_Name" )"
-		then
-				echo "; Couldn't get current funds of the Expense. Status: 8"
-				return 8
-		fi
-		Postransaction_Expense_Funds=$(( Expense_Funds - Payment_Cost ))
-
-		## Display payment screen
-		Payment_Message="
-		The payment of \`${Payment_Cost}\` will be done over the Fixed Expense \`${Expense_Name}\`\n
-		\t	Expense funds: ${Expense_Funds}\n
-		\t	Payment Cost: ${Payment_Cost}\n
-		\t	Remaining funds after payment: ${Postransaction_Expense_Funds}\n
-		"
-		echo -e $Payment_Message
-		unset Payment_Message
-
-		# Ask for confirmation
-		read -n 1 -p 'Proceed with the payment? Y/N: ' ; echo
-		if [[ "${REPLY,,}" != y && "${REPLY,,}" != n ]] ; then echo 'Invalid option, aborting.' > /dev/stderr ; return 8 ; fi
-		if [[ "${REPLY,,}" == n ]]
-		then
-				echo -e 'Payment canceled.'
-				return 1
-		fi
-
-		## Commit the payment
-		if ! Write_Expense "$Expense_Name" "$Postransaction_Expense_Funds"
-		then
-				echo "; Couldn't take off the money for the payment off the Expense. Status: 9"
-				return 9
-		fi
-
-		echo 'Payment committed successfully :)'
-		return 0
-
-		}
 		( shift 1 ; Payment_Flow "$@" )
 		exit $?
 fi
