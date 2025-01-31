@@ -470,11 +470,14 @@ Purchase_Flow() {
 		Remaining_Account_Foundings=$(( Account_Current_Foundings - Purchase_Value ))
 	
 		# Handling groceries' tickets
+		# if grep -i -e groceries -e grocery <<< "$Purchase_Message" &> /dev/null
+		# then
 		# echo "Either the word \`Grocery\` or \`Groceries\` was detected. Log a photo of the ticket?"
 		# read -n 1 -p 'Do you wish to capture the ticket? Y/N: ' ; echo
 		# if [[ "${REPLY,,}" != y && "${REPLY,,}" != n ]] ; then echo 'Invalid option, aborting.' > /dev/stderr ; exit 5 ; fi
 		# if [[ "${REPLY,,}" == n ]]
 		# else
+		# fi
 		# fi
 
 		# Displaying the purchase screen
