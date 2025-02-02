@@ -475,7 +475,43 @@ Purchase_Flow() {
 		# echo "Either the word \`Grocery\` or \`Groceries\` was detected. Log a photo of the ticket?"
 		# read -n 1 -p 'Do you wish to capture the ticket? Y/N: ' ; echo
 		# if [[ "${REPLY,,}" != y && "${REPLY,,}" != n ]] ; then echo 'Invalid option, aborting.' > /dev/stderr ; exit 5 ; fi
-		# if [[ "${REPLY,,}" == n ]]
+		# if [[ "${REPLY,,}" == y ]]
+		
+		### Get new ticket name
+		# declare New_Ticket_Name
+		# declare -i New_Ticket_Number
+		# declare New_Ticket_DateTime
+
+		# Get new ticket number
+		# New_Ticket_Number=1 # In case there's no previous number
+		# declare -i Latest_Ticket_Number
+		# for File_Path in /data/data/com.termux/files/usr/var/log/moneybook/Grocery_Tickets/*
+		# do
+				# File_Is_Ticket_Photo() {
+		  #      		declare +r File_Path="$1"
+		  #              declare +r File_Name="$( basename "$File_Path" )"
+		  #         	 declare +r Ticket_Name_Format='^[0-9]+@(Mon|Tue|Wen|Thu|Fri|Sat|Sun) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) ([0-3]?[0-9]) ([0-9]{4}) ([01][0-9]|2[0-3]):[0-5][0-9]hs$' # This expression should only match the name of a file with the format of a Ticket Photo. The only false positive I can think of is of the month happened to be 0 or if the the year is all messed up. But that is about validation, not about formatting.
+						# if [[ ! -f "$File_Path" ]] ; then return 1 ; fi
+		#            	if [[ ! -r "$File_Path" ]] ; then return 1 ; fi
+		       #		 if [[ ! "$File_Name" =~ $Ticket_Name_Format ]] ; then return 1 ; fi
+						# return 0
+		  #   	 }
+		      
+		     #  declare -i Current_Ticket_Number
+			#   if ! File_Is_Ticket_Photo "$File_Path" ; then continue ; fi
+		#       Current_Ticket_Number="$( sed -e 's|^.*/||' -e 's/@.*$//' <<< "$File_Path" )"
+		#       if [[ "$Current_Ticket_Number" -gt "$Latest_Ticket_Number" ]] ; then Latest_Ticket_Number="$Current_Ticket_Number" ; fi
+		#done
+		#New_Ticket_Number=$(( Latest_Ticket_Number + 1 ))
+		#unset Current_Ticket_Number Latest_Ticket_Number
+
+		# Get DateTime of the new ticket
+		#New_Ticket_DateTime="$( date '+%a %b %e %Y %H:%Mhs' )" # Produces a date formatted like: Fri Jan 24 2025 12:53hs
+		
+		# Build name and clean up
+		#New_Ticket_Name="${New_Ticket_Number}@${New_Ticket_DateTime}"
+		#unset New_Ticket_Number New_Ticket_DateTime
+
 		# else
 		# fi
 		# fi
