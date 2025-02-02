@@ -478,7 +478,7 @@ Purchase_Flow() {
 		# if [[ "${REPLY,,}" == y ]]
 		
 		# declare New_Ticket_Name
-		declare New_Ticket_Path
+		# declare New_Ticket_Path
 
 		### Get new ticket name
 		# declare -i New_Ticket_Number
@@ -522,6 +522,7 @@ Purchase_Flow() {
 		# Create temporary file
 		# New_Ticket_Path="${TMPDIR}/${New_Ticket_Name}.png"
 		# touch "$New_Ticket_Path"
+		# unset Nee_Ticket_Name
 		
 		# Take and capture the photo
 		# am start -a android.media.action.IMAGE_CAPTURE -e output "file:///${New_Ticket_Path}" &> /dev/null
@@ -561,6 +562,13 @@ Purchase_Flow() {
 				*) echo 'Invalid option, aborting.' > /dev/stderr ; exit 5 ;;
 				esac
 		fi
+
+		# If any, move the ticket photo to its definitive place
+		# if [[ "${New_Ticket_Path+Not Empty}" != "" ]]
+		# then
+				# if ! mv "$New_Ticket_Path" /data/data/com.termux/files/usr/var/log/moneybook/Grocery_Tickets/ ; then ; echo "Couldn't move the grocery ticket photo from its temporal location at \`${TMPDIR}\`. Continuing..." > /dev/stderr ; fi
+				# unset New_Ticket_Path
+		# fi
 
 		# Update the funds
 		Write_Account "$Account_Name" $Remaining_Account_Foundings
