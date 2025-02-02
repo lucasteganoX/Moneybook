@@ -477,8 +477,10 @@ Purchase_Flow() {
 		# if [[ "${REPLY,,}" != y && "${REPLY,,}" != n ]] ; then echo 'Invalid option, aborting.' > /dev/stderr ; exit 5 ; fi
 		# if [[ "${REPLY,,}" == y ]]
 		
-		### Get new ticket name
 		# declare New_Ticket_Name
+		declare New_Ticket_Path
+
+		### Get new ticket name
 		# declare -i New_Ticket_Number
 		# declare New_Ticket_DateTime
 
@@ -512,6 +514,23 @@ Purchase_Flow() {
 		#New_Ticket_Name="${New_Ticket_Number}@${New_Ticket_DateTime}"
 		#unset New_Ticket_Number New_Ticket_DateTime
 
+		### Handling the picture
+		# Ok. Basically I will use android's media Image Capture activity for this.
+		# After using chatgpt and experimenting a bit, I realized that it can write the picture to an existing file path given that you provide its URI adequately.
+		# So instead of using a content uri handler, I will create the file, and overwrite it to my liking.
+
+		# Create temporary file
+		# New_Ticket_Path="${TMPDIR}/${New_Ticket_Name}.png"
+		# touch "$New_Ticket_Path"
+		
+		# Take and capture the photo
+		# am start -a android.media.action.IMAGE_CAPTURE -e output "file:///${New_Ticket_Path}" &> /dev/null
+		# if [[ ! -s "$New_Ticket_Path" ]] # file is empty
+		# then
+				# echo "The photo couldn't be captured. Either the shot was cancelled, or there was some kind of error. Aborting." > /dev/stderr
+				# return 
+		# fi
+		
 		# else
 		# fi
 		# fi
