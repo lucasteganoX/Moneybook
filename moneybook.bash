@@ -303,6 +303,12 @@ Purchase_Flow() {
 		do
 				declare Argument="${@:$Argument_Index:1}"
 				if [[ "$Argument" != '-d' && "$Argument" != '--datetime' ]] ; then continue ; fi
+				declare Flag_Value_Index=$(( Argument_Index + 1 ))
+				if [[ "$Flag_Value_Index" -gt "${#@}" ]]
+				then
+						echo "Missing argument for purchase: Value following datetime flag" > /dev/stderr
+						exit 2
+				fi
 				
 		done
 		unset Argument
