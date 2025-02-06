@@ -309,7 +309,12 @@ Purchase_Flow() {
 						echo "Missing argument for purchase: Value following datetime flag" > /dev/stderr
 						exit 2
 				fi
-				
+				declare Flag_Value="${@:$Flag_Value_Index:1}"
+				if ! date --date="$Flag_Value" &> /dev/null
+				then
+						echo "The datetime supplied for the moment of the monetary transaction could not be parsed by date command" > /dev/null
+						exit 2
+				fi
 		done
 		unset Argument
 
