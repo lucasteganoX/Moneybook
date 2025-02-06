@@ -297,6 +297,16 @@ Purchase_Flow() {
 		# Argument handling
 		# Greatest overload: moneybook purchase savings 3442453 "Sex doll" -d "Last friday" # 6 arguments(either long or short flag, screw --flag=value format).
 		# Smallest overload: moneybook purchase savings 3442453 # 3 arguments
+
+		# detecting tand validating the date flag
+		for (( Argument_Index=0 ; Argument_Index<=${#@} ; Argument_Index++ ))
+		do
+				declare Argument="${@:$Argument_Index:1}"
+				if [[ "$Argument" != '-d' && "$Argument" != '--datetime' ]] ; then continue ; fi
+				
+		done
+		unset Argument
+
 		if [[ $# -lt 2 || $# -gt 6 ]]
 		then
 				if [[ ${1+IsSet} != 'IsSet' ]] ; then echo 'Missing arguments for purchase: Account Name, Price' > /dev/stderr
