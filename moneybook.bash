@@ -294,6 +294,22 @@ Warning: no purchase message was supplied!
 if [[ "$1" == 'purchase' ]]
 then
 Purchase_Flow() {
+
+		declare +r Account_Name
+		declare +r Purchase_Value
+		declare +r Purchase_Message
+		declare +i Account_Current_Foundings
+		declare +i Remaining_Account_Foundings
+
+		if [[ $# -lt 2 || $# -gt 6 ]]
+		then
+				if [[ ${1+IsSet} != 'IsSet' ]] ; then echo 'Missing arguments for purchase: Account Name, Price' > /dev/stderr
+				elif [[ ${2+IsSet} != 'IsSet' ]] ; then echo 'Missing argument for purchase: Price' > /dev/stderr
+				elif [[ ${6+IsSet} = 'IsSet' ]] ; then echo 'Extra arguments were supplied for purchase. Aborting just in case' > /dev/stderr
+				fi
+				exit 2
+		fi
+
 		# Argument handling
 		# Greatest overload: moneybook purchase savings 3442453 "Sex doll" -d "Last friday" # 6 arguments(either long or short flag, screw --flag=value format).
 		# Smallest overload: moneybook purchase savings 3442453 # 3 arguments
@@ -303,7 +319,8 @@ Purchase_Flow() {
 		do
 				declare Argument="${@:$Argument_Index:1}"
 				if [[ "$Argument" != '-d' && "$Argument" != '--datetime' ]] ; then continue ; fi
-				declare Flag_Value_Index=$(( Argument_Index + 1 ))
+				declare Flag_Index="$Argument_Index"
+				declare Flag_Value_Index=$(( Flag_Index + 1 ))
 				if [[ "$Flag_Value_Index" -gt "${#@}" ]]
 				then
 						echo "Missing argument for purchase: Value following datetime flag" > /dev/stderr
@@ -320,13 +337,37 @@ Purchase_Flow() {
 		done
 		unset Argument
 
-		if [[ $# -lt 2 || $# -gt 6 ]]
+		# handle datetime flag
+		if [[ "${Flag_Value-}" != '' ]]
 		then
-				if [[ ${1+IsSet} != 'IsSet' ]] ; then echo 'Missing arguments for purchase: Account Name, Price' > /dev/stderr
-				elif [[ ${2+IsSet} != 'IsSet' ]] ; then echo 'Missing argument for purchase: Price' > /dev/stderr
-				elif [[ ${6+IsSet} = 'IsSet' ]] ; then echo 'Extra arguments were supplied for purchase. Aborting just in case' > /dev/stderr
-				fi
-				exit 2
+				# asigning the rest of the arguments
+				# Because the flag can basically be at any given position within the arguments, it's not as somple as $1 = mode anymore.
+				# The good thing is that, if I take the flag out of the equation, then the order of the normal arguments must be the same!
+				declare -a Sequential_Arguments
+				IFS=$'\t'
+				Sequential_Arguments=( ${*} )
+				# Trickily, $@ exapands to all positional parameters except for $0, but...
+				# you can get $0 out of the same "reference" using ${@:0:1} as I did before.
+				# As "Sequential_Arguments" is declared as a copy of $@, $0 is not present.
+				# So... The index 0(first field) of $@ is not the same as ${@:0:1}.
+				# Because of that, the indexes I have got when I iterated through the arguments are shifted right by 1...
+				Flag_Index=$(( Flag_Index - 1 ))
+				Flag_Value_Index=$(( Flag_Value_Index - 1 ))
+				unset 'Sequential_Arguments[$Flag_Value_Index]'
+				unset 'Sequential_Arguments[$Flag_Index]'
+				# Beware, in bash unsetting an array index doesn't move the next element to the current index, instead, the index is left empty.
+				Sequential_Arguments=( ${Sequential_Arguments[*]} ) # This makes the elements left in the array to be in a row
+				declare -r Account_Name="${Sequential_Arguments[0]}"
+				declare -r Purchase_Value="${Sequential_Arguments[1]}"
+				declare +r Purchase_Message="${Sequential_Arguments[2]-}"
+				unset Sequential_Arguments
+				unset Flag_Index
+				unset Flag_Value_Index
+				unset IFS
+		else
+				declare -r Account_Name="$1"
+				declare -r Purchase_Value="$2"
+				declare -r Purchase_Message="${3-}"
 		fi
 
 		# Sourcing
@@ -340,12 +381,6 @@ Purchase_Flow() {
 				echo "Couldn't source \`~/moneybook/lib/Logging_Methods\` file, which cointains necessary procedures to log purchases." > /dev/stderr
 				return 100
 		fi
-
-		declare -r Account_Name=${1}
-		declare -r Purchase_Value=${2}
-		declare -r Purchase_Message=${3-}
-		declare -i Account_Current_Foundings
-		declare -i Remaining_Account_Foundings
 
 		# Check input
 		if [[ ! "$Purchase_Value" =~ ^[0-9]+$ ]]
