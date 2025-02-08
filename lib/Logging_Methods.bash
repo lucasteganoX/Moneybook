@@ -44,6 +44,16 @@ Log_Purchase() { # synopsis: Log_Purchase Account_Name Purchase_Cost Purchase_Me
 		3) echo "Couldn't log purchase, log file \`${Log_File_Path}\` is not writable. Status 9" > /dev/stderr ; return 9
 		esac
 
+		if [[ "$Monetary_Change_DateTime" != '' ]]
+		then
+				# Monetary change datetime check
+				declare +r 24_Hour_Regex='([0-1]?[0-9]|2[0-4]):[0-5][0-9]'
+				declare +r Monetary_DateTime_Format_Regex="^(Mon|Tue|Wed|Thu|Fri|Sat|Sun) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) ([0-2][0-9]|3[0-1]) [1-2][0-9][0-9][0-9] (${24_Hour_Regex}|N/A)hs$"
+				if [[ "$Monetary_Change_DateTime" != '' && "$Monetary_Change_DateTime" =~ $Monetary_DateTime_Format_Regex ]] ; then echo "Couldn't log purchase, the moment of monetary change couldn't be parsed as such. Status 10" ; return 10 ; fi
+				unset Monetary_DateTime_Format_Regex
+				unset 24_Hour_Regex
+		fi
+
 		# Logging the purchase
 		Purchase_Log_Line=" [Purchase] ${Purchase_DateTime}, over the Account \`${Account_Name}\` with a cost of \`${Purchase_Cost}\`"
 		if [[ "$Purchase_Message" != "" ]] ; then Purchase_Log_Line+=": ${Purchase_Message}" ; fi
