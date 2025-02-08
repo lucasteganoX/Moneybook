@@ -300,6 +300,7 @@ Purchase_Flow() {
 		declare +r Purchase_Message
 		declare +i Account_Current_Foundings
 		declare +i Remaining_Account_Foundings
+		declare DateTimeFlag_Value
 
 		if [[ $# -lt 2 || $# -gt 6 ]]
 		then
@@ -340,6 +341,9 @@ Purchase_Flow() {
 		# handle datetime flag
 		if [[ "${Flag_Value-}" != '' ]]
 		then
+				DateTimeFlag_Value="$( date --date "$Flag_Value" "$Log_DateTime_Format" )"
+				unset Flag_Value
+
 				# asigning the rest of the arguments
 				# Because the flag can basically be at any given position within the arguments, it's not as somple as $1 = mode anymore.
 				# The good thing is that, if I take the flag out of the equation, then the order of the normal arguments must be the same!
@@ -365,6 +369,8 @@ Purchase_Flow() {
 				unset Flag_Value_Index
 				unset IFS
 		else
+				declare -r DateTimeFlag_Value=''
+				unset Flag_Value
 				declare -r Account_Name="$1"
 				declare -r Purchase_Value="$2"
 				declare -r Purchase_Message="${3-}"
