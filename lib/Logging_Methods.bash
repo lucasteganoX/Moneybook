@@ -52,6 +52,9 @@ Log_Purchase() { # synopsis: Log_Purchase Account_Name Purchase_Cost Purchase_Me
 				if [[ "$Monetary_Change_DateTime" != '' && "$Monetary_Change_DateTime" =~ $Monetary_DateTime_Format_Regex ]] ; then echo "Couldn't log purchase, the moment of monetary change couldn't be parsed as such. Status 10" ; return 10 ; fi
 				unset Monetary_DateTime_Format_Regex
 				unset 24_Hour_Regex
+
+				# Monetary change formating
+				Monetary_Change_DateTime="(${Monetary_Change_DateTime})"
 		fi
 
 		# Logging the purchase
