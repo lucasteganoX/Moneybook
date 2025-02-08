@@ -334,6 +334,7 @@ Purchase_Flow() {
 						exit 2
 				fi
 		done
+		unset Argument
 
 		# asigning the rest of the arguments
 		# Because the flag can basically be at any given position within the arguments, it's not as somple as $1 = mode anymore.
@@ -355,6 +356,8 @@ Purchase_Flow() {
 		declare -r Purchase_Value="${Sequential_Arguments[2]}"
 		declare +r Purchase_Message="${Sequential_Arguments[3]-}"
 		unset Sequential_Arguments
+		unset Flag_Index
+		unset Flag_Value_Index
 
 		DateTimeFlag_Value="$Flag_Value"
 		unset Flag_Value
