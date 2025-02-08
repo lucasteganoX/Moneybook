@@ -300,6 +300,7 @@ Purchase_Flow() {
 		declare +r Purchase_Message
 		declare +i Account_Current_Foundings
 		declare +i Remaining_Account_Foundings
+		declare DateTimeFlag_Value
 
 		if [[ $# -lt 2 || $# -gt 6 ]]
 		then
@@ -354,6 +355,9 @@ Purchase_Flow() {
 		declare -r Purchase_Value="${Sequential_Arguments[2]}"
 		declare +r Purchase_Message="${Sequential_Arguments[3]-}"
 		unset Sequential_Arguments
+
+		DateTimeFlag_Value="$Flag_Value"
+		unset Flag_Value
 
 		# Sourcing
 		if ! . ~/moneybook/lib/Account_Methods.bash
