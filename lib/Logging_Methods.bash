@@ -63,7 +63,7 @@ Log_Purchase() { # synopsis: Log_Purchase Account_Name Purchase_Cost Purchase_Me
 		fi
 
 		# Logging the purchase
-		Purchase_Log_Line=" [Purchase] ${Purchase_DateTime}, over the Account \`${Account_Name}\` with a cost of \`${Purchase_Cost}\`"
+		Purchase_Log_Line=" [Purchase] ${Purchase_DateTime}${Monetary_Change_DateTime}, over the Account \`${Account_Name}\` with a cost of \`${Purchase_Cost}\`"
 		if [[ "$Purchase_Message" != "" ]] ; then Purchase_Log_Line+=": ${Purchase_Message}" ; fi
 		echo "$Purchase_Log_Line" >> "$Log_File_Path"
 		return 0
