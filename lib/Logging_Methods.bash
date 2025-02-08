@@ -11,16 +11,17 @@ Logging_Is_Possible() { # synopsis: Logging_Is_Possible # note: It checks everyt
 		return 0
 }
 
-Log_Purchase() { # synopsis: Log_Purchase Account_Name Purchase_Cost Purchase_Message # note: write a purchase entry to the log file. It needs the name of the account the purchase was made over, its cost and optionally a message to describe the purchase 
+Log_Purchase() { # synopsis: Log_Purchase Account_Name Purchase_Cost Purchase_Message Moment_Of_Monetary_Change # note: write a purchase entry to the log file. It needs the name of the account the purchase was made over, its cost and optionally a message to describe the purchase. Update: Now you can supply the moment in which the money was moved as separate from the moment in which the event is recorded. 
 		if [[ ${1+IsSet} != "IsSet" ]] ; then echo "Couldn't log purchase, missing argument: Account of the purchase. Status 1" > /dev/stderr ; return 1 ; fi
 		if [[ ${2+IsSet} != "IsSet" ]] ; then echo "Couldn't log purchase, missing argument: Cost of the purchase. Status 2" > /dev/stderr; return 2 ; fi
-		if [[ $# -gt 3 ]] ; then echo "Couldn't log purchase, excess of arguments. Status 3" > /dev/stderr ; return 3 ; fi
+		if [[ $# -gt 4 ]] ; then echo "Couldn't log purchase, excess of arguments. Status 3" > /dev/stderr ; return 3 ; fi
 
 		declare -r Log_Directory_Path='/data/data/com.termux/files/usr/var/log'
 		declare -r Log_File_Path="${Log_Directory_Path}/moneybook.log"
 		declare -r Account_Name="$1"
 		declare -r +i Purchase_Cost="$2"
 		declare -r Purchase_Message="${3-}" # might be empty
+		declare -r Monetary_Change_DateTime="${4-}" # might be empty
 		declare -r Purchase_DateTime=$( date '+%a %b %e %Y %H:%Mhs' ) # The datetime might look like `Sat Aug 31 2024 16:20:57`
 		declare Purchase_Log_Line # The line that will be written to the log file
 
