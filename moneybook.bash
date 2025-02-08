@@ -336,6 +336,21 @@ Purchase_Flow() {
 		done
 		unset Argument
 
+		# handle no hour passed for flag
+		if [[ "${Flag_Value-}" != '' ]]
+		then
+				declare +r Twelve_Hour_Regex='(1[0-2]|0?[0-9])(:[0-6][0-9])?((am|AM|a.m|A.M)|(pm|PM|p.m|P.M))'
+				declare +r TwentyFour_Hour_Regex='([0-1]?[0-9]|2[0-4]):[0-5][0-9]'
+				declare +r Log_DateTime_Format='+%a %b %d %Y %H:%Mhs'
+		
+				DateTimeFlag_Value="$( date --date "$Flag_Value" "$Log_DateTime_Format" )"
+				if ! grep -e "$Twelve_Hour_Regex" -e "$TwentyFour_Hour_Regex" <<< "$Flag_Value" &> /dev/null ; then DateTimeFlag_Value="$( sed -e "s|${TwentyFour_Hour_Regex}hs|N/Ahs|" <<< "$DateTime_Flag_Value" )" ; fi
+				unset Flag_Value
+				unset Twelve_Hour_Regex
+				unset TwentyFour_Hour_Regex
+				unset Log_DateTime_Format
+		fi
+
 		# asigning the rest of the arguments
 		# Because the flag can basically be at any given position within the arguments, it's not as somple as $1 = mode anymore.
 		# The good thing is that, if I take the flag out of the equation, then the order of the normal arguments must be the same!
@@ -358,9 +373,6 @@ Purchase_Flow() {
 		unset Sequential_Arguments
 		unset Flag_Index
 		unset Flag_Value_Index
-
-		DateTimeFlag_Value="$Flag_Value"
-		unset Flag_Value
 
 		# Sourcing
 		if ! . ~/moneybook/lib/Account_Methods.bash
