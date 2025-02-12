@@ -21,7 +21,7 @@ Log_Purchase() { # synopsis: Log_Purchase Account_Name Purchase_Cost Purchase_Me
 		declare -r Account_Name="$1"
 		declare -r +i Purchase_Cost="$2"
 		declare -r Purchase_Message="${3-}" # might be empty
-		declare -r Monetary_Change_DateTime="${4-}" # might be empty
+		declare +r Monetary_Change_DateTime="${4-}" # might be empty
 		declare -r Purchase_DateTime=$( date '+%a %b %e %Y %H:%Mhs' ) # The datetime might look like `Sat Aug 31 2024 16:20:57`
 		declare Purchase_Log_Line # The line that will be written to the log file
 
@@ -57,6 +57,9 @@ Log_Purchase() { # synopsis: Log_Purchase Account_Name Purchase_Cost Purchase_Me
 				fi
 				unset Monetary_DateTime_Format_Regex
 				unset TwentyFourHour_Regex
+
+				# Monetary change formating
+				Monetary_Change_DateTime="(${Monetary_Change_DateTime})"
 		fi
 
 		# Logging the purchase
