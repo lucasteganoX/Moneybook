@@ -433,7 +433,7 @@ Purchase_Flow() {
 		fi
 	
 		# Log the purchase
-		if ! Log_Purchase "$Account_Name" "$Purchase_Value" "$Purchase_Message"
+		if ! Log_Purchase "$Account_Name" "$Purchase_Value" "$Purchase_Message" "$DateTimeFlag_Value"
 		then
 				echo "The purchase couldn't be logged..." > /dev/stderr
 				echo "The purchase hasn't take effect yet. You can safely cancel it now."
