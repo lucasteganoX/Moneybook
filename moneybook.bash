@@ -140,7 +140,7 @@ Inject_Flow() {
 		# Argument quantity check
 		declare Argument_Quantity_Error=''
 		if [[ ${1:+IsSet} != 'IsSet' ]] ; then Argument_Quantity_Error='Missing argument for injection: Amount of incoming money' ; fi
-		if [[ ${3+IsSet} = 'IsSet' ]] ; then Argument_Quantity_Error='Extra argument/s were supplied for injection. Aborting just in case' ; fi
+		if [[ ${5+IsSet} = 'IsSet' ]] ; then Argument_Quantity_Error='Extra argument/s were supplied for injection. Aborting just in case' ; fi
 		if [[ "$Argument_Quantity_Error" != '' ]]
 		then
 				echo "$Argument_Quantity_Error" > /dev/stderr
