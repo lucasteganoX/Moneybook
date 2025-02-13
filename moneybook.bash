@@ -137,6 +137,10 @@ Echo_Unfulfilled_Expenses_Warnings() { # outputs: A warning message for each unf
 
 # Flow
 Inject_Flow() {
+		declare +r Incoming_Money
+		declare +r Log_Message
+		declare DateTimeFlag_Value
+
 		# Argument quantity check
 		declare Argument_Quantity_Error=''
 		if [[ ${1:+IsSet} != 'IsSet' ]] ; then Argument_Quantity_Error='Missing argument for injection: Amount of incoming money' ; fi
@@ -171,12 +175,50 @@ Inject_Flow() {
 				break
 		done
 		unset Argument
-		unset Flag_Index
-		unset Flag_Value_Index
-		unset Flag_Value
 
-		declare Incoming_Money="$1"
-		declare Log_Message="${2-}"
+		if [[ "${Flag_Value-}" != '' ]]
+		then
+				# handle no hour passed for flag
+				declare +r Twelve_Hour_Regex='(1[0-2]|0?[0-9])(:[0-6][0-9])?((am|AM|a.m|A.M)|(pm|PM|p.m|P.M))'
+				declare +r TwentyFour_Hour_Regex='([0-1]?[0-9]|2[0-4]):[0-5][0-9]'
+				declare +r Log_DateTime_Format='+%a %b %d %Y %H:%Mhs'
+		
+				DateTimeFlag_Value="$( date --date "$Flag_Value" "$Log_DateTime_Format" )"
+				if ! grep -E -e "$Twelve_Hour_Regex" -e "$TwentyFour_Hour_Regex" <<< "$Flag_Value" &> /dev/null ; then DateTimeFlag_Value="$( sed -E -e "s#${TwentyFour_Hour_Regex}hs#N/Ahs#" <<< "$DateTimeFlag_Value" )" ; fi
+				unset Flag_Value
+				unset Twelve_Hour_Regex
+				unset TwentyFour_Hour_Regex
+				unset Log_DateTime_Format
+
+				# asigning the rest of the arguments
+				# Because the flag can basically be at any given position within the arguments, it's not as somple as $1 = mode anymore.
+				# The good thing is that, if I take the flag out of the equation, then the order of the normal arguments must be the same!
+				declare -a Sequential_Arguments
+				IFS=$'\t'
+				Sequential_Arguments=( ${*} )
+				# Trickily, $@ exapands to all positional parameters except for $0, but...
+				# you can get $0 out of the same "reference" using ${@:0:1} as I did before.
+				# As "Sequential_Arguments" is declared as a copy of $@, $0 is not present.
+				# So... The index 0(first field) of $@ is not the same as ${@:0:1}.
+				# Because of that, the indexes I have got when I iterated through the arguments are shifted right by 1...
+				Flag_Index=$(( Flag_Index - 1 ))
+				Flag_Value_Index=$(( Flag_Value_Index - 1 ))
+				unset 'Sequential_Arguments[$Flag_Value_Index]'
+				unset 'Sequential_Arguments[$Flag_Index]'
+				# Beware, in bash unsetting an array index doesn't move the next element to the current index, instead, the index is left empty.
+				Sequential_Arguments=( ${Sequential_Arguments[*]} ) # This makes the elements left in the array to be in a row
+				declare -r Incoming_Money="${Sequential_Arguments[0]}"
+				declare -r Log_Message="${Sequential_Arguments[1]-}"
+				unset Sequential_Arguments
+				unset Flag_Index
+				unset Flag_Value_Index
+				unset IFS
+		else
+				declare -r DateTimeFlag_Value=''
+				unset Flag_Value
+				declare -r Incoming_Money="$1"
+				declare -r Log_Message="${2-}"
+		fi
 
 		if ! . ~/moneybook/lib/Account_Methods.bash
 		then
