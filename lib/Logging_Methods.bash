@@ -82,7 +82,6 @@ Log_Injection() {
 #		   Alternatively, the time of day might be replaced with `N/A`...
 #		   For example: Mon Jan 27 2025 N/Ahs
 
-		   
 		Parameter_Is_Account_Object() {
 				declare -r Correct_Object_Syntax='^.+//[0-9]+//[0-9]+$'
 				declare -r Account_Object="$1"
@@ -91,15 +90,73 @@ Log_Injection() {
 				return # This will return the result of the previous expression
 		}
 
+		declare +r Injection_Value
+		declare +r Account_Objects
+		declare +r Log_Message
+		declare +r Monetary_Change_DateTime
+
 		if [[ ${1+IsSet} != 'IsSet' ]] ; then echo "Couldn't log injection, missing argument: amount of injected money. Status 1" > /dev/stderr ; return 1 ; fi
 		if ! [[ "$1" =~ ^[0-9]+$ ]] ; then echo "Couldn't log injection, couldn't parse the first argument as a positive, integer, amount of money. Status 2" > /dev/stderr ; return 2 ; fi
 		if [[ $# -lt 2 ]] ; then echo "Couldn't log injection, not enough parameters were given. Status 3" > /dev/stderr ; return 3 ; fi
 		if [[ "$1" -eq 0 ]] ; then "Couldn't log injection, the injection amount was given a value of 0. Status 4" > /dev/stderr ; return 4 ; fi
 
+		# § Assigning the arguments
+		# Note: Just for the record, if I were to completely rework this function(I would like to do so), I would NOT pass the account objects as separate arguments
+		# 	  but would instead pass it as a single argument and split it into different account objects using IFS and expanding the array with [*] INSIDE THE FUNCTION.
+		#   	That would make it faaaar more simple to assign the arguments, and it would be more elegant. However, that would open the scope considerably, and I
+		#   	need to get over this(that is, logging the monetary change moment) asap.
+
+		# Assigning injection value
+		Injection_Value="$1"
+
+		# Assigning the injection datetime
+		declare -r Injection_DateTime="$( date '+%a %b %e %Y %H:%Mhs' )" # The datetime might look like `Sat Aug 31 2024 16:20:57`
+
+		# Assigning the log file path
+		declare +r Log_Directory_Path='/data/data/com.termux/files/usr/var/log'
+		declare -r Log_File_Path="${Log_Directory_Path}/moneybook.log"
+		unset Log_Directory_Path
+
+		# Assigning the moment of monetary change
+		declare +r TwentyFourHour_Regex='([0-1]?[0-9]|2[0-4]):[0-5][0-9]'
+		declare +r Monetary_DateTime_Format_Regex="^(Mon|Tue|Wed|Thu|Fri|Sat|Sun) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) ([0-2][0-9]|3[0-1]) [1-2][0-9][0-9][0-9] (${TwentyFourHour_Regex}|N/A)hs$"
+		if grep -E "$Monetary_DateTime_Format_Regex" <<< "${@: -1}" &> /dev/null
+		then declare -r Monetary_Change_DateTime="${@: -1}"
+		else declare -r Monetary_Change_DateTime=''
+		fi
+		unset Monetary_DateTime_Format_Regex
+		unset TwentyFourHour_Regex
+
+		# Assigning the log message
+		declare Log_Message_Index
+		if [[ "$Monetary_Change_DateTime" = '' ]]
+		then Log_Message_Index='-1'
+		else Log_Message_Index=' -2:1' # Second to last argument
+		fi
+
+		eval 'declare +r Argument=${@:'"$Log_Message_Index"'}' # Don't ask me why, but bash cannot handle you passing it a substring expnasion expression as a variable. Thus the use of eval
+		if ! Parameter_Is_Account_Object "$Argument"
+		then declare -r Log_Message="$Argument"
+		else declare -r Log_Message=''
+		fi
+		unset Log_Message_Index
+		unset Argument
+
+		# Assigning account objects
+		declare +r -i First_Object_Index=2 # This is for substring substitution; indexes start from 1. And 1 is always for the amount of money
+		declare -i Last_Object_Index
+		Last_Object_Index="$(( ${#@} - 1 ))"
+		if [[ "$Monetary_Change_DateTime" != '' ]] ; then Last_Object_Index=$(( Last_Object_Index - 1 )) ; fi
+		if [[ "$Log_Message" != '' ]] ; then Last_Object_Index=$(( Last_Object_Index - 1 )) ; fi
+		if [[ "$Last_Object_Index" -lt 1 ]] ; then Last_Object_Index=1 ; fi
+		Account_Objects="${@:$First_Object_Index:$Last_Object_Index}"
+		unset First_Object_Index
+		unset Last_Object_Index
+
 		# Account objects format check
 		for Parameter in "${@:2}"
 		do
-				if ! Parameter_Is_Account_Object "$Parameter" 
+				if ! Parameter_Is_Account_Object "$Parameter"
 				then
 						if [[ "$Parameter" = "${@: -1}" ]]
 						then
@@ -118,20 +175,6 @@ Log_Injection() {
 				echo "Logging_methods: Couldn't log purchase, couldn't source \`~/moneybook/lib/Account_Methods\`. Status 6"
 				return 6
 		fi
-
-		declare -r Log_Directory_Path='/data/data/com.termux/files/usr/var/log'
-		declare -r Log_File_Path="${Log_Directory_Path}/moneybook.log"
-		declare -r -i Injection_Value="$1"
-		if ! Parameter_Is_Account_Object "${@: -1}"
-		then
-				declare -r Log_Message="${@: -1}"
-				declare -r -a Account_Objects=( "${@:2:$#-2}" )
-		else
-				declare -r Log_Message=''
-				declare -r -a Account_Objects=( "${@:2}" )
-				
-		fi # This correctly handles both not passing the message argument, and passing an empty string instrad.
-		declare -r Injection_DateTime="$( date '+%a %b %e %Y %H:%Mhs' )" # The datetime might look like `Sat Aug 31 2024 16:20:57`
 
 		# Log file check
 		Logging_Is_Possible
