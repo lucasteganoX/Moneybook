@@ -70,13 +70,19 @@ Log_Purchase() { # synopsis: Log_Purchase Account_Name Purchase_Cost Purchase_Me
 }
 
 Log_Injection() { 
-# Synopsis: Log_Injection <+Int>InjectedMoney <IndexedArray>AccountStates [<String(No_Escape_Interpretation)>Log_Message]
+# Synopsis: Log_Injection <+Int>InjectedMoney <IndexedArray>AccountStates [<String(No_Escape_Interpretation)>Log_Message] [<DateTime>Moment_Of_Monetary_Change]
 # Note:	 Each element of the indexed array represents the state of an account
 #		   and is parsed as follows: AccountName//<Int>AccountPreviousFunds//<Int>AccountNewFunds
 #		   For example: savings//1234//2435
 #		   Which reads that the account `savings` previously had a balance of `1234` *money* and now ot has `2435` *money*
 #		   When invoking the function, simply expand the array as this: "${Accounts[@]}"
-#		   Which could expand for example to: "savings//1234//2435 allowance//5450//10000 selfinvestment//3000//6000"		   
+#		   Which could expand for example to: "savings//1234//2435 allowance//5450//10000 selfinvestment//3000//6000"
+# Note:	 The moment of monetary change means "when did my money change other than the moment I am recording the event into moneybook?".
+#		   It must be formated as: %a %b %d %Y %H:%Mhs
+#		   Alternatively, the time of day might be replaced with `N/A`...
+#		   For example: Mon Jan 27 2025 N/Ahs
+
+		   
 		Parameter_Is_Account_Object() {
 				declare -r Correct_Object_Syntax='^.+//[0-9]+//[0-9]+$'
 				declare -r Account_Object="$1"
