@@ -148,6 +148,33 @@ Inject_Flow() {
 		fi
 		unset Argument_Quantity_Error
 
+		# Handling the datetime flag
+		# detecting tand validating the date flag
+		for (( Argument_Index=0 ; Argument_Index<=${#@} ; Argument_Index++ ))
+		do
+				declare Argument="${@:$Argument_Index:1}"
+				if [[ "$Argument" != '-d' && "$Argument" != '--datetime' ]] ; then continue ; fi
+				declare Flag_Index="$Argument_Index"
+				declare Flag_Value_Index=$(( Flag_Index + 1 ))
+				if [[ "$Flag_Value_Index" -gt "${#@}" ]]
+				then
+						echo "Missing argument for purchase: Value following datetime flag" > /dev/stderr
+						exit 2
+				fi
+
+				declare Flag_Value="${@:$Flag_Value_Index:1}"
+				if ! date --date="$Flag_Value" &> /dev/null
+				then
+						echo "The datetime supplied for the moment of the monetary transaction could not be parsed by date command" > /dev/null
+						exit 2
+				fi
+				break
+		done
+		unset Argument
+		unset Flag_Index
+		unset Flag_Value_Index
+		unset Flag_Value
+
 		declare Incoming_Money="$1"
 		declare Log_Message="${2-}"
 
