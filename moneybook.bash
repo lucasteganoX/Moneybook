@@ -340,6 +340,22 @@ Purchase_Flow() {
 		done
 		unset Argument
 
+
+		# check for non-flag argument under quantity limit
+		# Checking the quangity is not enough, as it is possible to pass something other than the flag and being under the quantity limitations.
+		# In that case the program would just go by without the flag, but without halting either.
+		if [[ "$#" > 3 && "${Flag_Value-}" = '' ]]
+		then
+				# Rationale:
+				# There's 3 sequential arguments, and the flag. If there's more parameters than that necessary for the sequential arguments,
+				# and there's no flag value, then either the flag is wrong or some nonsense was passed.
+				# The three first parameters will be evaluated as the account, amount and message respectively. So if they're other than that,
+				# then the program will eventually return anyway. So there's no need to worry about them.
+				# Threat: moneybook purchase test 100 "Hola" dufufjf hujh # This currently lets the program run without flag
+				echo 'Invalid argument/s detected. Aborting.' > /dev/stderr
+				return 2
+		fi
+
 		# handle datetime flag
 		if [[ "${Flag_Value-}" != '' ]]
 		then
