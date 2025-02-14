@@ -202,7 +202,7 @@ Log_Injection() {
 		# Logging the purchase
 		declare Injection_Log_Line
 		if [[ "$Monetary_Change_DateTime" != '' ]] ; then Monetary_Change_DateTime="(${Monetary_Change_DateTime})" ; fi
-		Injection_Log_Line=" [Injection] ${Injection_DateTime}, with a value of \`${Injection_Value}\` *money*; "
+		Injection_Log_Line=" [Injection] ${Injection_DateTime}${Monetary_Change_DateTime}, with a value of \`${Injection_Value}\` *money*; "
 		
 		## Record the state of the accounts in the log line
 		for Account_Object in "${Account_Objects[@]}"
