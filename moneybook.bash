@@ -290,7 +290,7 @@ Inject_Flow() {
 		unset Account_Share Account_Old_Funds Account_Income Account_New_Funds
 
 		# Log the injection
-		if ! Log_Injection "$Incoming_Money" "${Account_Objects[@]}" "$Log_Message"
+		if ! Log_Injection "$Incoming_Money" "${Account_Objects[@]}" "$Log_Message" "$DateTimeFlag_Value"
 		then
 				echo "The injection couldn't be logged..." > /dev/stderr
 				echo "The injection hasn't take effect yet. You can safely cancel it now."
