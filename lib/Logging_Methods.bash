@@ -154,17 +154,11 @@ Log_Injection() {
 		unset Last_Object_Index
 
 		# Account objects format check
-		for Parameter in "${@:2}"
+		for Account_Object in "${Account_Objects[@]}"
 		do
-				if ! Parameter_Is_Account_Object "$Parameter"
+				if ! Parameter_Is_Account_Object "$Account_Object"
 				then
-						if [[ "$Parameter" = "${@: -1}" ]]
-						then
-								# This means the last parameter is the
-								# log message, and not an Account Object
-								continue
-						fi
-						echo "Couldn't log injection, the argument \`${Parameter}\` couldn't be parsed as an Account Object. Status 5" > /dev/stderr
+						echo "Couldn't log injection, the argument \`${Account_Object}\` couldn't be parsed as an Account Object. Status 5" > /dev/stderr
 						return 5
 				fi
 		done
