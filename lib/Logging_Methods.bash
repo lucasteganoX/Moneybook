@@ -70,7 +70,7 @@ Log_Purchase() { # synopsis: Log_Purchase Account_Name Purchase_Cost Purchase_Me
 }
 
 Log_Injection() { 
-# Synopsis: Log_Injection <+Int>InjectedMoney <IndexedArray>AccountStates [<String(No_Escape_Interpretation)>Log_Message] [<DateTime>Moment_Of_Monetary_Change]
+# Synopsis: Log_Injection <+Int>InjectedMoney <IndexedArray>AccountStates [<String(No_Escape_Interpretation)?>Log_Message] [<DateTime?>Moment_Of_Monetary_Change]
 # Note:	 Each element of the indexed array represents the state of an account
 #		   and is parsed as follows: AccountName//<Int>AccountPreviousFunds//<Int>AccountNewFunds
 #		   For example: savings//1234//2435
@@ -81,6 +81,8 @@ Log_Injection() {
 #		   It must be formated as: %a %b %d %Y %H:%Mhs
 #		   Alternatively, the time of day might be replaced with `N/A`...
 #		   For example: Mon Jan 27 2025 N/Ahs
+# Note: 	You might invoke the function passing an empty string ''(as indicated by the question mark in the synopsis) in the place of either the log message or the moneyary change datetime, or not supply them at all.
+#   		Internally, the function gets rid of the empty strings. Don't alter the order tho of those two tho.
 
 		Parameter_Is_Account_Object() {
 				declare -r Correct_Object_Syntax='^[^/]+//[0-9]+//[0-9]+$'
@@ -106,6 +108,24 @@ Log_Injection() {
 		#   	That would make it faaaar more simple to assign the arguments, and it would be more elegant. However, that would open the scope considerably, and I
 		#   	need to get over this(that is, logging the monetary change moment) asap.
 
+		# Getting rid of empty strings
+		# You see... I carried on an important aconception so far. That is if the function were to be invoked with the log message and monetary change datetime
+		# as empty strings or without passing them; I always intended to be able to pass an empty string in place of any of those args, but I prepared the func
+		# tion to handle solely not passing them. This causes that passing only empty strings breaks the thing.
+		# More concretely, invoking the program as `bash moneybook inject 100 'Fake salary'` gets the log message assigned an empty string for the monetary cha
+		# nge datetime, that throws the definition of the last account object index off the window, expanding part of the log message and halting the program.
+		# For that, the easiest thing is to get rid of the empty string arguments. That way it's like you would have invoked the function without those argumem
+		# ents. Both giving support to both manners of invokation, and avoiding me the hassle of re-working the assignment of the arguments.
+		declare -a Parameters_Without_Empties
+		IFS=$'\t'
+		Parameters_Without_Empties=( ${*} )
+		for (( Parameter_Index=0 ; Parameter_Index<=${#Parameters_Without_Empties[@]} ; Parameter_Index++ ))
+		do
+				if [[ "${Parameters_Without_Empties[$Parameter_Index]}" = '' ]] ; then unset 'Parameters_Without_Empties[$Parameter_Index]' ; fi
+		done
+		set ${Parameters_Without_Empties[*]} # This re-assigns all the parameters except for the empty strings
+		unset IFS
+
 		# Assigning injection value
 		Injection_Value="$1"
 
@@ -130,11 +150,11 @@ Log_Injection() {
 		# Assigning the log message
 		declare Log_Message_Index
 		if [[ "$Monetary_Change_DateTime" = '' ]]
-		then Log_Message_Index='-1'
+		then Log_Message_Index=' -1:1'
 		else Log_Message_Index=' -2:1' # Second to last argument
 		fi
 
-		eval 'declare +r Argument=${@:'"$Log_Message_Index"'}' # Don't ask me why, but bash cannot handle you passing it a substring expnasion expression as a variable. Thus the use of eval
+		eval 'declare +r Argument="${@:'"$Log_Message_Index"'}"' # Don't ask me why, but bash cannot handle you passing it a substring expnasion expression as a variable. Thus the use of eval
 		if ! Parameter_Is_Account_Object "$Argument"
 		then declare -r Log_Message="$Argument"
 		else declare -r Log_Message=''
