@@ -91,9 +91,9 @@ Log_Injection() {
 		}
 
 		declare +r Injection_Value
-		declare +r Account_Objects
+		declare +r -a Account_Objects
 		declare +r Log_Message
-		declare +r Monetary_Change_DateTime
+		declare Monetary_Change_DateTime
 
 		if [[ ${1+IsSet} != 'IsSet' ]] ; then echo "Couldn't log injection, missing argument: amount of injected money. Status 1" > /dev/stderr ; return 1 ; fi
 		if ! [[ "$1" =~ ^[0-9]+$ ]] ; then echo "Couldn't log injection, couldn't parse the first argument as a positive, integer, amount of money. Status 2" > /dev/stderr ; return 2 ; fi
@@ -121,7 +121,7 @@ Log_Injection() {
 		declare +r TwentyFourHour_Regex='([0-1]?[0-9]|2[0-4]):[0-5][0-9]'
 		declare +r Monetary_DateTime_Format_Regex="^(Mon|Tue|Wed|Thu|Fri|Sat|Sun) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) ([0-2][0-9]|3[0-1]) [1-2][0-9][0-9][0-9] (${TwentyFourHour_Regex}|N/A)hs$"
 		if grep -E "$Monetary_DateTime_Format_Regex" <<< "${@: -1}" &> /dev/null
-		then declare -r Monetary_Change_DateTime="${@: -1}"
+		then declare Monetary_Change_DateTime="${@: -1}"
 		else declare -r Monetary_Change_DateTime=''
 		fi
 		unset Monetary_DateTime_Format_Regex
@@ -149,12 +149,13 @@ Log_Injection() {
 		if [[ "$Monetary_Change_DateTime" != '' ]] ; then Last_Object_Index=$(( Last_Object_Index - 1 )) ; fi
 		if [[ "$Log_Message" != '' ]] ; then Last_Object_Index=$(( Last_Object_Index - 1 )) ; fi
 		if [[ "$Last_Object_Index" -lt 1 ]] ; then Last_Object_Index=1 ; fi
-		Account_Objects="${@:$First_Object_Index:$Last_Object_Index}"
+		unset IFS
+		Account_Objects=( ${@:$First_Object_Index:$Last_Object_Index} )
 		unset First_Object_Index
 		unset Last_Object_Index
 
 		# Account objects format check
-		for Account_Object in "${Account_Objects[@]}"
+		for Account_Object in ${Account_Objects[@]}
 		do
 				if ! Parameter_Is_Account_Object "$Account_Object"
 				then
@@ -200,6 +201,7 @@ Log_Injection() {
 
 		# Logging the purchase
 		declare Injection_Log_Line
+		if [[ "$Monetary_Change_DateTime" != '' ]] ; then Monetary_Change_DateTime="(${Monetary_Change_DateTime})" ; fi
 		Injection_Log_Line=" [Injection] ${Injection_DateTime}, with a value of \`${Injection_Value}\` *money*; "
 		
 		## Record the state of the accounts in the log line
