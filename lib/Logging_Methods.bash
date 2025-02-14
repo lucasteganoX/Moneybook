@@ -83,7 +83,7 @@ Log_Injection() {
 #		   For example: Mon Jan 27 2025 N/Ahs
 
 		Parameter_Is_Account_Object() {
-				declare -r Correct_Object_Syntax='^.+//[0-9]+//[0-9]+$'
+				declare -r Correct_Object_Syntax='^[^/]+//[0-9]+//[0-9]+$'
 				declare -r Account_Object="$1"
 
 				[[ "$Account_Object" =~ $Correct_Object_Syntax ]]
