@@ -83,7 +83,6 @@ Log_Injection() {
 #		   For example: Mon Jan 27 2025 N/Ahs
 # Note: 	You might invoke the function passing an empty string ''(as indicated by the question mark in the synopsis) in the place of either the log message or the moneyary change datetime, or not supply them at all.
 #   		Internally, the function gets rid of the empty strings. Don't alter the order tho of those two tho.
-
 		Parameter_Is_Account_Object() {
 				declare -r Correct_Object_Syntax='^[^/]+//[0-9]+//[0-9]+$'
 				declare -r Account_Object="$1"
@@ -119,7 +118,7 @@ Log_Injection() {
 		declare -a Parameters_Without_Empties
 		IFS=$'\t'
 		Parameters_Without_Empties=( ${*} )
-		for (( Parameter_Index=0 ; Parameter_Index<=${#Parameters_Without_Empties[@]} ; Parameter_Index++ ))
+		for (( Parameter_Index=0 ; Parameter_Index<=$(( ${#Parameters_Without_Empties[@]} - 1 )) ; Parameter_Index++ ))
 		do
 				if [[ "${Parameters_Without_Empties[$Parameter_Index]}" = '' ]] ; then unset 'Parameters_Without_Empties[$Parameter_Index]' ; fi
 		done
