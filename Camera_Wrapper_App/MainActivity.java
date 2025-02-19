@@ -30,7 +30,9 @@ public class MainActivity extends Activity {
 			Uri OutputFile = This_Intent.getParcelableExtra( MediaStore.EXTRA_OUTPUT ) ;
 			
 			// Launch the IMAGE CAPTURE activity
-			
+			Intent IMAGE_CAPTURE_Intent = new Intent( MediaStore.ACTION_IMAGE_CAPTURE ) ;
+			startActivity(intent) ;
+
 			finish() ;
 	}
 }
