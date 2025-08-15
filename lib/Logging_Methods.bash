@@ -273,4 +273,17 @@ Log_Payment() {
 		declare -r Expense_Name=${1}
 		declare -r Funds_Update=${2}
 		
+		# Check for incorrect form of "FundsUpdate"
+		declare +r Valid_Integer_Regex='(-?[1-9][0-9]*|0)'
+		declare +r Correct_FundsUpdate_Format="^${Valid_Integer_Regex}//${Valid_Integer_Regex}\$"
+		
+		if ! [[ "$Funds_Update" =~ $Correct_FundsUpdate_Format ]]
+		then
+				echo "Couldn't log payment, the states of the Expense's funds are not formatted correctly. Status 4" > /dev/stderr
+				return 4
+		fi
+
+		unset Correct_FundsUpdate_Format
+		unset Valid_Integer_Regex
+		
 }
