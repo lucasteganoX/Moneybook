@@ -251,3 +251,14 @@ Log_Injection() {
 		unset Injection_Log_Line
 		return 0
 }
+
+Log_Payment() {	
+# Synopsis: Log_Payment <String>Expense_Name <IndexedArray>FundsUpdate
+# Note: The indexed array "FundsUpdate" portraits the change in state of the funds of the Expense.
+#	   And it is parsed as follows: <Int>PrevioudFunds//<Int>NewFunds
+# 	  Where the double slash is literal and acts as a separator.
+#	   For example, passing: 1250//1000
+#	   Reads that the Expense previously had 1250 *money, and now has 1000.
+#	   From this it is also deducted that the cost was 250. And it will be logged as well.
+	
+}
