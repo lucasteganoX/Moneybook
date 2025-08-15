@@ -260,5 +260,17 @@ Log_Payment() {
 #	   For example, passing: 1250//1000
 #	   Reads that the Expense previously had 1250 *money, and now has 1000.
 #	   From this it is also deducted that the cost was 250. And it will be logged as well.
-	
+		
+		declare +r Expense_Name
+		declare +r Funds_Update
+		declare +r Previous_Funds
+		declare +r New_Funds
+		
+		if [[ ${1-} = '' ]] ; then echo "Couldn't log payment, missing name of the Expense. Status 1" > /dev/stderr ; return 1 ; fi
+		if [[ ${2-} = '' ]] ; then echo "Couldn't log payment, missing state of funds of the Expense. Status 2" > /dev/stderr ; return 2 ; fi
+		if [[ "$#" -ne 2 ]] ; then echo "Couldn't log payment, incorrect amount of arguments passed. Status 3" > /dev/stderr ; return 3 ; fi
+		
+		declare -r Expense_Name=${1}
+		declare -r Funds_Update=${2}
+		
 }
