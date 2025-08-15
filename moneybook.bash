@@ -11,11 +11,13 @@ Regularly ~/moneybook
 
 Command_Help_Message="
 Purcharse management mode:\n
-\t	Concrete synopsis: ${0} purcharse education 12000 'Hardvard course'\n
-\t	Abstract synopsis: ${0} purcharse /033[2;0AccountFileName PurcharseIntegerValue [ PurchaseLogMessage ]\n
+\t	Concrete synopsis: ${0} purcharse -d 'last friday' education 12000 'Hardvard course'\n
+\t	Abstract synopsis: ${0} purcharse [-d | --datetime MomentOfMonetaryChange] /033[2;0AccountFileName PurcharseIntegerValue [ PurchaseLogMessage ]\n
 \n
 \t	Purcharse managment mode allows you to stage a purcharse over one of your Accounts. Allowing you to see your current foundings and what would remain if you commit the current purcharse.\n
 \t	Each purchase is logged into the \`moneybook.log\` file, which is under the log directory of the OS. If given a message for the purchase, it gets logged along with the rest of the purchase.\n
+\t	Specifying the moment of moneyary change apart from that of the record of the operation is allowed. The flag might be placed anywhere after the word \`purchase\` as long as the value follows right after.\n
+\t	The value of the flag is interpreted by the \`date\` command, but if no hour(time of the day) value is supplied, it is specified as \`N/A\`, obviously, a date indicator is still mandatory.\n
 Money injection mode:\n
 \t	Concrete synopsis: ${0} inject 4700 'I won the lottery'\n
 \t	Abstract synopsis: ${0} inject YourIncomingIntegerAmountOfMoney [ InjectionLogMessage ]\n
@@ -135,10 +137,14 @@ Echo_Unfulfilled_Expenses_Warnings() { # outputs: A warning message for each unf
 
 # Flow
 Inject_Flow() {
+		declare +r Incoming_Money
+		declare +r Log_Message
+		declare DateTimeFlag_Value
+
 		# Argument quantity check
 		declare Argument_Quantity_Error=''
 		if [[ ${1:+IsSet} != 'IsSet' ]] ; then Argument_Quantity_Error='Missing argument for injection: Amount of incoming money' ; fi
-		if [[ ${3+IsSet} = 'IsSet' ]] ; then Argument_Quantity_Error='Extra argument/s were supplied for injection. Aborting just in case' ; fi
+		if [[ ${5+IsSet} = 'IsSet' ]] ; then Argument_Quantity_Error='Extra argument/s were supplied for injection. Aborting just in case' ; fi
 		if [[ "$Argument_Quantity_Error" != '' ]]
 		then
 				echo "$Argument_Quantity_Error" > /dev/stderr
@@ -146,8 +152,73 @@ Inject_Flow() {
 		fi
 		unset Argument_Quantity_Error
 
-		declare Incoming_Money="$1"
-		declare Log_Message="${2-}"
+		# Handling the datetime flag
+		# detecting tand validating the date flag
+		for (( Argument_Index=0 ; Argument_Index<=${#@} ; Argument_Index++ ))
+		do
+				declare Argument="${@:$Argument_Index:1}"
+				if [[ "$Argument" != '-d' && "$Argument" != '--datetime' ]] ; then continue ; fi
+				declare Flag_Index="$Argument_Index"
+				declare Flag_Value_Index=$(( Flag_Index + 1 ))
+				if [[ "$Flag_Value_Index" -gt "${#@}" ]]
+				then
+						echo "Missing argument for purchase: Value following datetime flag" > /dev/stderr
+						exit 2
+				fi
+
+				declare Flag_Value="${@:$Flag_Value_Index:1}"
+				if ! date --date="$Flag_Value" &> /dev/null
+				then
+						echo "The datetime supplied for the moment of the monetary transaction could not be parsed by date command" > /dev/null
+						exit 2
+				fi
+				break
+		done
+		unset Argument
+
+		if [[ "${Flag_Value-}" != '' ]]
+		then
+				# handle no hour passed for flag
+				declare +r Twelve_Hour_Regex='(1[0-2]|0?[0-9])(:[0-6][0-9])?((am|AM|a.m|A.M)|(pm|PM|p.m|P.M))'
+				declare +r TwentyFour_Hour_Regex='([0-1]?[0-9]|2[0-4]):[0-5][0-9]'
+				declare +r Log_DateTime_Format='+%a %b %d %Y %H:%Mhs'
+		
+				DateTimeFlag_Value="$( date --date "$Flag_Value" "$Log_DateTime_Format" )"
+				if ! grep -E -e "$Twelve_Hour_Regex" -e "$TwentyFour_Hour_Regex" <<< "$Flag_Value" &> /dev/null ; then DateTimeFlag_Value="$( sed -E -e "s#${TwentyFour_Hour_Regex}hs#N/Ahs#" <<< "$DateTimeFlag_Value" )" ; fi
+				unset Flag_Value
+				unset Twelve_Hour_Regex
+				unset TwentyFour_Hour_Regex
+				unset Log_DateTime_Format
+
+				# asigning the rest of the arguments
+				# Because the flag can basically be at any given position within the arguments, it's not as somple as $1 = mode anymore.
+				# The good thing is that, if I take the flag out of the equation, then the order of the normal arguments must be the same!
+				declare -a Sequential_Arguments
+				IFS=$'\t'
+				Sequential_Arguments=( ${*} )
+				# Trickily, $@ exapands to all positional parameters except for $0, but...
+				# you can get $0 out of the same "reference" using ${@:0:1} as I did before.
+				# As "Sequential_Arguments" is declared as a copy of $@, $0 is not present.
+				# So... The index 0(first field) of $@ is not the same as ${@:0:1}.
+				# Because of that, the indexes I have got when I iterated through the arguments are shifted right by 1...
+				Flag_Index=$(( Flag_Index - 1 ))
+				Flag_Value_Index=$(( Flag_Value_Index - 1 ))
+				unset 'Sequential_Arguments[$Flag_Value_Index]'
+				unset 'Sequential_Arguments[$Flag_Index]'
+				# Beware, in bash unsetting an array index doesn't move the next element to the current index, instead, the index is left empty.
+				Sequential_Arguments=( ${Sequential_Arguments[*]} ) # This makes the elements left in the array to be in a row
+				declare -r Incoming_Money="${Sequential_Arguments[0]}"
+				declare -r Log_Message="${Sequential_Arguments[1]-}"
+				unset Sequential_Arguments
+				unset Flag_Index
+				unset Flag_Value_Index
+				unset IFS
+		else
+				declare -r DateTimeFlag_Value=''
+				unset Flag_Value
+				declare -r Incoming_Money="$1"
+				declare -r Log_Message="${2-}"
+		fi
 
 		if ! . ~/moneybook/lib/Account_Methods.bash
 		then
@@ -219,7 +290,7 @@ Inject_Flow() {
 		unset Account_Share Account_Old_Funds Account_Income Account_New_Funds
 
 		# Log the injection
-		if ! Log_Injection "$Incoming_Money" "${Account_Objects[@]}" "$Log_Message"
+		if ! Log_Injection "$Incoming_Money" "${Account_Objects[@]}" "$Log_Message" "$DateTimeFlag_Value"
 		then
 				echo "The injection couldn't be logged..." > /dev/stderr
 				echo "The injection hasn't take effect yet. You can safely cancel it now."
@@ -294,13 +365,111 @@ Warning: no purchase message was supplied!
 if [[ "$1" == 'purchase' ]]
 then
 Purchase_Flow() {
-		if [[ $# -lt 2 || $# -gt 3 ]]
+
+		declare +r Account_Name
+		declare +r Purchase_Value
+		declare +r Purchase_Message
+		declare +i Account_Current_Foundings
+		declare +i Remaining_Account_Foundings
+		declare DateTimeFlag_Value
+
+		if [[ $# -lt 2 || $# -gt 6 ]]
 		then
 				if [[ ${1+IsSet} != 'IsSet' ]] ; then echo 'Missing arguments for purchase: Account Name, Price' > /dev/stderr
 				elif [[ ${2+IsSet} != 'IsSet' ]] ; then echo 'Missing argument for purchase: Price' > /dev/stderr
-				elif [[ ${4+IsSet} = 'IsSet' ]] ; then echo 'Extra arguments were supplied for purchase. Aborting just in case' > /dev/stderr
+				elif [[ ${6+IsSet} = 'IsSet' ]] ; then echo 'Extra arguments were supplied for purchase. Aborting just in case' > /dev/stderr
 				fi
 				exit 2
+		fi
+
+		# Argument handling
+		# Greatest overload: moneybook purchase savings 3442453 "Sex doll" -d "Last friday" # 6 arguments(either long or short flag, screw --flag=value format).
+		# Smallest overload: moneybook purchase savings 3442453 # 3 arguments
+
+		# detecting tand validating the date flag
+		for (( Argument_Index=0 ; Argument_Index<=${#@} ; Argument_Index++ ))
+		do
+				declare Argument="${@:$Argument_Index:1}"
+				if [[ "$Argument" != '-d' && "$Argument" != '--datetime' ]] ; then continue ; fi
+				declare Flag_Index="$Argument_Index"
+				declare Flag_Value_Index=$(( Flag_Index + 1 ))
+				if [[ "$Flag_Value_Index" -gt "${#@}" ]]
+				then
+						echo "Missing argument for purchase: Value following datetime flag" > /dev/stderr
+						exit 2
+				fi
+
+				declare Flag_Value="${@:$Flag_Value_Index:1}"
+				if ! date --date="$Flag_Value" &> /dev/null
+				then
+						echo "The datetime supplied for the moment of the monetary transaction could not be parsed by date command" > /dev/null
+						exit 2
+				fi
+				break
+		done
+		unset Argument
+
+
+		# check for non-flag argument under quantity limit
+		# Checking the quangity is not enough, as it is possible to pass something other than the flag and being under the quantity limitations.
+		# In that case the program would just go by without the flag, but without halting either.
+		if [[ "$#" > 3 && "${Flag_Value-}" = '' ]]
+		then
+				# Rationale:
+				# There's 3 sequential arguments, and the flag. If there's more parameters than that necessary for the sequential arguments,
+				# and there's no flag value, then either the flag is wrong or some nonsense was passed.
+				# The three first parameters will be evaluated as the account, amount and message respectively. So if they're other than that,
+				# then the program will eventually return anyway. So there's no need to worry about them.
+				# Threat: moneybook purchase test 100 "Hola" dufufjf hujh # This currently lets the program run without flag
+				echo 'Invalid argument/s detected. Aborting.' > /dev/stderr
+				return 2
+		fi
+
+		# handle datetime flag
+		if [[ "${Flag_Value-}" != '' ]]
+		then
+				# handle no hour passed for flag
+				declare +r Twelve_Hour_Regex='(1[0-2]|0?[0-9])(:[0-6][0-9])?((am|AM|a.m|A.M)|(pm|PM|p.m|P.M))'
+				declare +r TwentyFour_Hour_Regex='([0-1]?[0-9]|2[0-4]):[0-5][0-9]'
+				declare +r Log_DateTime_Format='+%a %b %d %Y %H:%Mhs'
+		
+				DateTimeFlag_Value="$( date --date "$Flag_Value" "$Log_DateTime_Format" )"
+				if ! grep -E -e "$Twelve_Hour_Regex" -e "$TwentyFour_Hour_Regex" <<< "$Flag_Value" &> /dev/null ; then DateTimeFlag_Value="$( sed -E -e "s#${TwentyFour_Hour_Regex}hs#N/Ahs#" <<< "$DateTimeFlag_Value" )" ; fi
+				unset Flag_Value
+				unset Twelve_Hour_Regex
+				unset TwentyFour_Hour_Regex
+				unset Log_DateTime_Format
+
+				# asigning the rest of the arguments
+				# Because the flag can basically be at any given position within the arguments, it's not as somple as $1 = mode anymore.
+				# The good thing is that, if I take the flag out of the equation, then the order of the normal arguments must be the same!
+				declare -a Sequential_Arguments
+				IFS=$'\t'
+				Sequential_Arguments=( ${*} )
+				# Trickily, $@ exapands to all positional parameters except for $0, but...
+				# you can get $0 out of the same "reference" using ${@:0:1} as I did before.
+				# As "Sequential_Arguments" is declared as a copy of $@, $0 is not present.
+				# So... The index 0(first field) of $@ is not the same as ${@:0:1}.
+				# Because of that, the indexes I have got when I iterated through the arguments are shifted right by 1...
+				Flag_Index=$(( Flag_Index - 1 ))
+				Flag_Value_Index=$(( Flag_Value_Index - 1 ))
+				unset 'Sequential_Arguments[$Flag_Value_Index]'
+				unset 'Sequential_Arguments[$Flag_Index]'
+				# Beware, in bash unsetting an array index doesn't move the next element to the current index, instead, the index is left empty.
+				Sequential_Arguments=( ${Sequential_Arguments[*]} ) # This makes the elements left in the array to be in a row
+				declare -r Account_Name="${Sequential_Arguments[0]}"
+				declare -r Purchase_Value="${Sequential_Arguments[1]}"
+				declare +r Purchase_Message="${Sequential_Arguments[2]-}"
+				unset Sequential_Arguments
+				unset Flag_Index
+				unset Flag_Value_Index
+				unset IFS
+		else
+				declare -r DateTimeFlag_Value=''
+				unset Flag_Value
+				declare -r Account_Name="$1"
+				declare -r Purchase_Value="$2"
+				declare -r Purchase_Message="${3-}"
 		fi
 
 		# Sourcing
@@ -314,12 +483,6 @@ Purchase_Flow() {
 				echo "Couldn't source \`~/moneybook/lib/Logging_Methods\` file, which cointains necessary procedures to log purchases." > /dev/stderr
 				return 100
 		fi
-
-		declare -r Account_Name=${1}
-		declare -r Purchase_Value=${2}
-		declare -r Purchase_Message=${3-}
-		declare -i Account_Current_Foundings
-		declare -i Remaining_Account_Foundings
 
 		# Check input
 		if [[ ! "$Purchase_Value" =~ ^[0-9]+$ ]]
@@ -357,7 +520,7 @@ Purchase_Flow() {
 		fi
 	
 		# Log the purchase
-		if ! Log_Purchase "$Account_Name" "$Purchase_Value" "$Purchase_Message"
+		if ! Log_Purchase "$Account_Name" "$Purchase_Value" "$Purchase_Message" "$DateTimeFlag_Value"
 		then
 				echo "The purchase couldn't be logged..." > /dev/stderr
 				echo "The purchase hasn't take effect yet. You can safely cancel it now."
