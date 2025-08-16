@@ -286,4 +286,14 @@ Log_Payment() {
 		unset Correct_FundsUpdate_Format
 		unset Valid_Integer_Regex
 		
+		# Assign the new and old amount of funds
+		declare Previous_Funds_Regex='^[^/]+'
+		declare New_Funds_Regex='[^/]+$'
+		
+		Previous_Funds="$( grep --color=never -E -o "$Previous_Funds_Regex" <<< "$Funds_Update" )"
+		New_Funds="$( grep --color=never -E -o "$New_Funds_Regex" <<< "$Funds_Update"  )"
+		
+		unset Previous_Funds_Regex
+		unset New_Funds_Regex
+		
 }
