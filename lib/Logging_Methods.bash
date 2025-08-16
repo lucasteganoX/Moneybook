@@ -296,4 +296,13 @@ Log_Payment() {
 		unset Previous_Funds_Regex
 		unset New_Funds_Regex
 		
+		# Checking log file
+		Logging_Is_Possible
+		case $? in
+		0) ;;
+		1) echo "Couldn't log payment, the log file doesn't exist. Status 5" > /dev/stderr ; return 5 ;;
+		2) echo "Couldn't log payment, the log file is not a regular file. Status 6" > /dev/stderr ; return 6 ;;
+		3) echo "Couldn't log paymebt, the log file is not writable. Status 7" > /dev/stderr ; return 7 ;;
+		*) echo "Couldn't log payment, an unexpected error occurred while checking the log file. Status 8" > /dev/stderr ; return 8 ;;
+		esac
 }
