@@ -318,4 +318,18 @@ Log_Payment() {
 				echo -n "; Couldn't check the name \`${Expense_Name}\` corresponds to a valid Expense file. Status 10" > /dev/stderr
 				return 10
 		fi
+
+		# Creating the log line
+		declare Log_Line
+		declare Record_DateTime
+		declare Record_DateTime_Format='+%a %b %e %Y %H:%Mhs' # The datetime might look like `Sat Aug 31 2024 16:20hs'
+		declare -i Payment_Cost
+		
+		Record_DateTime="$( date "$Record_DateTime_Format" )"
+		Payment_Cost=$(( Previous_Funds - New_Funds ))
+		Log_Line=" [Payment] ${Record_DateTime}, a payment of \`${Payment_Cost}\` *money was made over the Expense \`${Expense_Name}\`( \`${Previous_Funds}\` > \`${New_Funds}\` )"
+		
+		unset Record_DateTime
+		unset Record_DateTime_Format
+		unset Payment_Costs
 }
