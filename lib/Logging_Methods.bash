@@ -305,4 +305,17 @@ Log_Payment() {
 		3) echo "Couldn't log paymebt, the log file is not writable. Status 7" > /dev/stderr ; return 7 ;;
 		*) echo "Couldn't log payment, an unexpected error occurred while checking the log file. Status 8" > /dev/stderr ; return 8 ;;
 		esac
+		
+		# Checking Expense exists
+		if ! . ~/moneybook/lib/Expense_Methods.bash Name_Is_Expense
+		then
+				echo -n "; Couldn't log payment, unable to source function to check Expense file. Status 9" > /dev/stderr
+				return 9
+		fi
+
+		if ! Name_Is_Expense "$Expense_Name"
+		then
+				echo -n "; Couldn't check the name \`${Expense_Name}\` corresponds to a valid Expense file. Status 10" > /dev/stderr
+				return 10
+		fi
 }
