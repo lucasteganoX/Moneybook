@@ -755,6 +755,15 @@ then
 				return 9
 		fi
 
+		# Log the payment
+		if ! . ~/moneybook/lib/Logging_Methods Log_Payment
+		then
+				echo "Couldn't log the payment, unable to source logging function. Status 10" > /dev/stderr
+				return 10
+		fi
+
+		if ! 
+
 		echo 'Payment committed successfully :)'
 		return 0
 

@@ -332,4 +332,9 @@ Log_Payment() {
 		unset Record_DateTime
 		unset Record_DateTime_Format
 		unset Payment_Costs
+		
+		# Write the line to the log file
+		declare -r Log_File_Path='/data/data/com.termux/files/usr/var/log/moneybook.log'
+		echo "$Log_Line" >> "$Log_File_Path"
+		return
 }
