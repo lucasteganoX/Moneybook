@@ -253,25 +253,28 @@ Log_Injection() {
 }
 
 Log_Payment() {	
-# Synopsis: Log_Payment <String>Expense_Name <IndexedArray>FundsUpdate
+# Synopsis: Log_Payment <String>Expense_Name <IndexedArray>FundsUpdate [<String?>Payment_Message]
 # Note: The indexed array "FundsUpdate" portraits the change in state of the funds of the Expense.
 #	   And it is parsed as follows: <Int>PrevioudFunds//<Int>NewFunds
 # 	  Where the double slash is literal and acts as a separator.
 #	   For example, passing: 1250//1000
 #	   Reads that the Expense previously had 1250 *money, and now has 1000.
 #	   From this it is also deducted that the cost was 250. And it will be logged as well.
+# Note: The payment message is not expanded in any way, shape or form.
 		
 		declare +r Expense_Name
 		declare +r Funds_Update
 		declare +r Previous_Funds
 		declare +r New_Funds
+		declare +r Payment_Message
 		
 		if [[ ${1-} = '' ]] ; then echo "Couldn't log payment, missing name of the Expense. Status 1" > /dev/stderr ; return 1 ; fi
 		if [[ ${2-} = '' ]] ; then echo "Couldn't log payment, missing state of funds of the Expense. Status 2" > /dev/stderr ; return 2 ; fi
-		if [[ "$#" -ne 2 ]] ; then echo "Couldn't log payment, incorrect amount of arguments passed. Status 3" > /dev/stderr ; return 3 ; fi
+		if [[ "$#" -lt 2 && "$#" -gt 3 ]] ; then echo "Couldn't log payment, incorrect amount of arguments passed. Status 3" > /dev/stderr ; return 3 ; fi
 		
 		declare -r Expense_Name=${1}
 		declare -r Funds_Update=${2}
+		declare -r Payment_Message=${3-}
 		
 		# Check for incorrect form of "FundsUpdate"
 		declare +r Valid_Integer_Regex='(-?[1-9][0-9]*|0)'
@@ -328,6 +331,7 @@ Log_Payment() {
 		Record_DateTime="$( date "$Record_DateTime_Format" )"
 		Payment_Cost=$(( Previous_Funds - New_Funds ))
 		Log_Line=" [Payment] ${Record_DateTime}, a payment of \`${Payment_Cost}\` *money was made over the Expense \`${Expense_Name}\`( \`${Previous_Funds}\` > \`${New_Funds}\` )"
+		if [[ "$Payment_Message" != '' ]] ; then Log_Line+=": ${Payment_Message}" ; fi
 		
 		unset Record_DateTime
 		unset Record_DateTime_Format
