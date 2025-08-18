@@ -756,13 +756,17 @@ then
 		fi
 
 		# Log the payment
-		if ! . ~/moneybook/lib/Logging_Methods Log_Payment
+		if ! . ~/moneybook/lib/Logging_Methods.bash Log_Payment
 		then
 				echo "Couldn't log the payment, unable to source logging function. Status 10" > /dev/stderr
 				return 10
 		fi
 
-		if ! 
+		if ! Log_Payment "$Expense_Name" "${Expense_Funds}//${Postransaction_Expense_Funds}"
+		then
+				echo "; Couldn't log payment, there was an error with the log function." > /dev/stderr
+				echo "Warning: The money was already charged, but it was not recorded in the log file..."
+		fi
 
 		echo 'Payment committed successfully :)'
 		return 0
