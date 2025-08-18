@@ -684,7 +684,7 @@ then
 				return 3
 		fi
 
-		if [[ ${3+IsSet} = 'IsSet' ]]
+		if [[ ${4+IsSet} = 'IsSet' ]]
 		then
 				echo "Couldn't pay expense, too much arguments. Status: 4" > /dev/stderr
 				return 4
@@ -694,6 +694,7 @@ then
 		declare +i Payment_Cost
 		declare -i Expense_Funds
 		declare -i Postransaction_Expense_Funds
+		declare Payment_Message="${3-}"
 
 		local +r -i Name_Is_Expense_Status=$( Name_Is_Expense "$Expense_Name" 2> /dev/null ; echo $? ) # it would be nice to be able to invoke `Name_Is_Expense --echo "$Expense_Name" 2> /dev/null` to echo its exit status directly
 		if ! ( return $Name_Is_Expense_Status )
@@ -730,14 +731,14 @@ then
 		Postransaction_Expense_Funds=$(( Expense_Funds - Payment_Cost ))
 
 		## Display payment screen
-		Payment_Message="
+		Payment_Screen="
 		The payment of \`${Payment_Cost}\` will be done over the Fixed Expense \`${Expense_Name}\`\n
 		\t	Expense funds: ${Expense_Funds}\n
 		\t	Payment Cost: ${Payment_Cost}\n
 		\t	Remaining funds after payment: ${Postransaction_Expense_Funds}\n
 		"
-		echo -e $Payment_Message
-		unset Payment_Message
+		echo -e $Payment_Screen
+		unset Payment_Screen
 
 		# Ask for confirmation
 		read -n 1 -p 'Proceed with the payment? Y/N: ' ; echo
@@ -762,7 +763,7 @@ then
 				return 10
 		fi
 
-		if ! Log_Payment "$Expense_Name" "${Expense_Funds}//${Postransaction_Expense_Funds}"
+		if ! Log_Payment "$Expense_Name" "${Expense_Funds}//${Postransaction_Expense_Funds}" "$Payment_Message"
 		then
 				echo "; Couldn't log payment, there was an error with the log function." > /dev/stderr
 				echo "Warning: The money was already charged, but it was not recorded in the log file..."
