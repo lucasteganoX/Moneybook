@@ -32,11 +32,12 @@ Money separation mode:\n
 \t	Separation mode allows you to save money for a given Fixed Expense, summing the amount to its funds. If the funds were to overflow the Budget of the Expense, then you are offered to Inject the exceeding money.\n
 \t	It is the mean to get money destined to Pay a determined Fixed Spense.\n
 Fixed Expense payment mode:\n
-\t	Concrete synopsis: ${0} pay PhoneBill 1150\n
-\t	Abstract synopsis: ${0} pay FixedExpenseName [ PaymentPrice ]\n
+\t	Concrete synopsis: ${0} pay PhoneBill 1150 'I also bought a 20 bucks internet package'\n
+\t	Abstract synopsis: ${0} pay FixedExpenseName [ PaymentPrice ] [ Log Message ]\n
 \n
 \t	Fixed Expense payment mode allows you to pay a determined Fixed Expense.\n
 \t	The price of the payment will be discounted from the funds of the Expense. The final price of the payment might be specified, in that case that is the amount of money to be discounted. Otherwise, the budgeted amount, aka the Expense's Budget, is to be discounted.\n
+\t	Each purchase is logged into the \`moneybook.log\` file, which is under the log directory of the OS. If given a message for the purchase, it gets logged along with the rest of the purchase.\n
 \n
 \t\t		Written by: @LucasYata
 "
