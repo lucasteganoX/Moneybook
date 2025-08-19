@@ -673,6 +673,7 @@ fi
 if [[ "$1" = 'pay' ]]
 then
 		Payment_Flow() {
+		DateTimeFlag_IsPresent() { grep -Ew -- '-d|--date' <<< "$@" &> /dev/null ; }
 		if ! . ~/moneybook/lib/Expense_Methods.bash
 		then
 				echo "Couldn't source \`~/moneybook/lib/Expense_Methods.bash\` file containing necessary proceedures to treat Fixed Expenses. Status: 2" > /dev/stderr
@@ -684,7 +685,7 @@ then
 				declare -i Minimum_Parameters=1
 				declare -i Max_Parameters=3
 				
-				if grep -Ew -- '-d|--date' <<< "$@" &> /dev/null
+				if DateTimeFlag_IsPresent "$@"
 				then
 						Minimum_Parameters+=2
 						Max_Parameters+=2
@@ -710,6 +711,37 @@ then
 		declare -i Expense_Funds
 		declare -i Postransaction_Expense_Funds
 		declare Payment_Message="${3-}"
+		declare Payment_DateTime=''
+
+		# Assigning the arguments
+		{
+			
+				# Assigning the datetime flag
+				if DateTimeFlag_IsPresent "$@"
+				then
+						Last_Parameter_Index="$#"
+						for (( Parameter_Index=1 ; "$Parameter_Index"<="$Last_Parameter_Index" ; Parameter_Index++ ))
+						do
+								declare Current_Parameter="${!Parameter_Index}"
+								if [[ "$Current_Parameter" != '-d' && "$Current_Parameter" != '--datetime' ]] ; then continue ; fi
+								if [[ "$Parameter_Index" -eq "$Last_Parameter_Index" ]]
+								then
+										echo "Couldn't make payment, datetime flag has no argument. Status 5" > /dev/stderr
+										return 5
+								fi
+
+								declare Payment_DateTime_Index=$(( Parameter_Index + 1 ))
+								Payment_DateTime="${!Payment_DateTime_Index}"
+								break
+						done
+						unset Last_Parameter_Index
+						unset Current_Parameter
+						unset Payment_DateTime_Index
+				fi
+				return 99
+
+				# Assigning the rest of the arguments
+		}
 
 		local +r -i Name_Is_Expense_Status=$( Name_Is_Expense "$Expense_Name" 2> /dev/null ; echo $? ) # it would be nice to be able to invoke `Name_Is_Expense --echo "$Expense_Name" 2> /dev/null` to echo its exit status directly
 		if ! ( return $Name_Is_Expense_Status )
