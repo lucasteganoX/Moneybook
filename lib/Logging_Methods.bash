@@ -273,18 +273,37 @@ Log_Payment() {
 		declare +r Previous_Funds
 		declare +r New_Funds
 		declare +r Payment_Message
+		declare Monetary_Change_DateTime
 		
 		if [[ ${1-} = '' ]] ; then echo "Couldn't log payment, missing name of the Expense. Status 1" > /dev/stderr ; return 1 ; fi
 		if [[ ${2-} = '' ]] ; then echo "Couldn't log payment, missing state of funds of the Expense. Status 2" > /dev/stderr ; return 2 ; fi
-		if [[ "$#" -lt 2 || "$#" -gt 4 ]] ; then echo "Couldn't log payment, incorrect amount of arguments passed. Status 3" > /dev/stderr ; return 3 ; fi
+		if [[ "$#" -lt 2 && "$#" -gt 3 ]] ; then echo "Couldn't log payment, incorrect amount of arguments passed. Status 3" > /dev/stderr ; return 3 ; fi
 		
 		declare -r Expense_Name=${1}
 		declare -r Funds_Update=${2}
 		declare -r Payment_Message=${3-}
+		declare Monetary_Change_DateTime=${4-}
 		
 		# Check for incorrect form of "FundsUpdate"
 		declare +r Valid_Integer_Regex='(-?[1-9][0-9]*|0)'
 		declare +r Correct_FundsUpdate_Format="^${Valid_Integer_Regex}//${Valid_Integer_Regex}\$"
+		
+		if [[ "$Monetary_Change_DateTime" != '' ]]
+		then
+				# Monetary change datetime check
+				declare +r TwentyFourHour_Regex='([0-1]?[0-9]|2[0-4]):[0-5][0-9]'
+				declare +r Monetary_DateTime_Format_Regex="^(Mon|Tue|Wed|Thu|Fri|Sat|Sun) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) ([0-2][0-9]|3[0-1]) [1-2][0-9][0-9][0-9] (${TwentyFourHour_Regex}|N/A)hs$"
+				if ! grep -E "$Monetary_DateTime_Format_Regex" <<< "$Monetary_Change_DateTime" &> /dev/null
+				then
+						echo "Couldn't log purchase, the moment of monetary change couldn't be parsed as such. Status 10"
+						return 4
+				fi
+				unset Monetary_DateTime_Format_Regex
+				unset TwentyFourHour_Regex
+
+				# Monetary change formating
+				Monetary_Change_DateTime="(${Monetary_Change_DateTime})"
+		fi
 		
 		if ! [[ "$Funds_Update" =~ $Correct_FundsUpdate_Format ]]
 		then
