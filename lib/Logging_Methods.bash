@@ -276,7 +276,7 @@ Log_Payment() {
 		
 		if [[ ${1-} = '' ]] ; then echo "Couldn't log payment, missing name of the Expense. Status 1" > /dev/stderr ; return 1 ; fi
 		if [[ ${2-} = '' ]] ; then echo "Couldn't log payment, missing state of funds of the Expense. Status 2" > /dev/stderr ; return 2 ; fi
-		if [[ "$#" -lt 2 && "$#" -gt 3 ]] ; then echo "Couldn't log payment, incorrect amount of arguments passed. Status 3" > /dev/stderr ; return 3 ; fi
+		if [[ "$#" -lt 2 || "$#" -gt 4 ]] ; then echo "Couldn't log payment, incorrect amount of arguments passed. Status 3" > /dev/stderr ; return 3 ; fi
 		
 		declare -r Expense_Name=${1}
 		declare -r Funds_Update=${2}
