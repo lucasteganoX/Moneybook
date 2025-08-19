@@ -253,7 +253,7 @@ Log_Injection() {
 }
 
 Log_Payment() {	
-# Synopsis: Log_Payment <String>Expense_Name <IndexedArray>FundsUpdate [<String?>Payment_Message]
+# Synopsis: Log_Payment <String>Expense_Name <IndexedArray>FundsUpdate [<String?>Payment_Message] [<DateTime?>Moment_Of_Monetary_Change]
 # Note: The indexed array "FundsUpdate" portraits the change in state of the funds of the Expense.
 #	   And it is parsed as follows: <Int>PrevioudFunds//<Int>NewFunds
 # 	  Where the double slash is literal and acts as a separator.
@@ -261,6 +261,12 @@ Log_Payment() {
 #	   Reads that the Expense previously had 1250 *money, and now has 1000.
 #	   From this it is also deducted that the cost was 250. And it will be logged as well.
 # Note: The payment message is not expanded in any way, shape or form.
+# Note:	 The moment of monetary change means "when did my money change other than the moment I am recording the event into moneybook?".
+#		   On output it will be formatted as: %a %b %d %Y %H:%Mhs
+#		   It is a string passed to the date command. However the time of day might be replaced with `N/A`...
+#		   For example: Mon Jan 27 2025 N/Ahs
+# Note: 	You might invoke the function passing an empty string ''(as indicated by the question mark in the synopsis) in the place of either the log message or the moneyary change datetime, or not supply them at all.
+#   		Internally, the function gets rid of the empty strings. Don't alter the order tho of those two tho.
 		
 		declare +r Expense_Name
 		declare +r Funds_Update
