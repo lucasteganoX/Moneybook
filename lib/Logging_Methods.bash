@@ -355,7 +355,7 @@ Log_Payment() {
 		
 		Record_DateTime="$( date "$Record_DateTime_Format" )"
 		Payment_Cost=$(( Previous_Funds - New_Funds ))
-		Log_Line=" [Payment] ${Record_DateTime}, a payment of \`${Payment_Cost}\` *money was made over the Expense \`${Expense_Name}\`( \`${Previous_Funds}\` > \`${New_Funds}\` )"
+		Log_Line=" [Payment] ${Record_DateTime}${Monetary_Change_DateTime}, a payment of \`${Payment_Cost}\` *money was made over the Expense \`${Expense_Name}\`( \`${Previous_Funds}\` > \`${New_Funds}\` )"
 		if [[ "$Payment_Message" != '' ]] ; then Log_Line+=": ${Payment_Message}" ; fi
 		
 		unset Record_DateTime
