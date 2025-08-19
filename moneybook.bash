@@ -715,11 +715,13 @@ then
 
 		# Assigning the arguments
 		{
-			
 				# Assigning the datetime flag
 				if DateTimeFlag_IsPresent "$@"
 				then
-						Last_Parameter_Index="$#"
+						declare -i DateTime_Flag_Index
+						declare -i DateTime_Argument_Index
+
+						declare -i Last_Parameter_Index="$#"
 						for (( Parameter_Index=1 ; "$Parameter_Index"<="$Last_Parameter_Index" ; Parameter_Index++ ))
 						do
 								declare Current_Parameter="${!Parameter_Index}"
@@ -730,17 +732,36 @@ then
 										return 5
 								fi
 
-								declare Payment_DateTime_Index=$(( Parameter_Index + 1 ))
+								declare -i Payment_DateTime_Index=$(( Parameter_Index + 1 ))
 								Payment_DateTime="${!Payment_DateTime_Index}"
+
+								DateTime_Flag_Index="$Parameter_Index"
+								DateTime_Argument_Index="$Payment_DateTime_Index"
 								break
 						done
 						unset Last_Parameter_Index
 						unset Current_Parameter
 						unset Payment_DateTime_Index
+
+						# Excluding the flag and its argument from the parameters
+						DateTime_Argument_Index=$(( DateTime_Argument_Index - 1 ))
+						DateTime_Flag_Index=$(( DateTime_Flag_Index - 1 ))
+
+						declare -a Rest_Of_Parameters[0]
+						Rest_Of_Parameters=( "$@" )
+						unset 'Rest_Of_Parameters[$DateTime_Argument_Index]'
+						unset 'Rest_Of_Parameters[$DateTime_Flag_Index]'
+						
+						Rest_Of_Parameters=( "${Rest_Of_Parameters[@]}" )
+						set -- "${Rest_Of_Parameters[@]}"
+
+						unset DateTime_Flag_Index
+						unset DateTime_Argument_Index
+
 				fi
-				return 99
 
 				# Assigning the rest of the arguments
+				return 99
 		}
 
 		local +r -i Name_Is_Expense_Status=$( Name_Is_Expense "$Expense_Name" 2> /dev/null ; echo $? ) # it would be nice to be able to invoke `Name_Is_Expense --echo "$Expense_Name" 2> /dev/null` to echo its exit status directly
