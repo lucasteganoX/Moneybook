@@ -679,17 +679,31 @@ then
 				return 2
 		fi
 
-		if [[ ${1+IsSet} != 'IsSet' ]]
-		then
-				echo "Couldn't pay expense, missing argument: Expense name. Status: 3" > /dev/stderr
-				return 3
-		fi
+		# Check quantity of arguments
+		{
+				declare -i Minimum_Parameters=1
+				declare -i Max_Parameters=3
+				
+				if grep -Ew -- '-d|--date' <<< "$@" &> /dev/null
+				then
+						Minimum_Parameters+=2
+						Max_Parameters+=2
+						# As a sidenote, this works only because the variables are integers.
+				fi
+				
+				if [[ "$#" -lt "$Minimum_Parameters" ]]
+				then
+						echo "Couldn't pay expense, too little arguments. Status: 3" > /dev/stderr
+						return 3
+				elif [[ "$#" -gt "$Max_Parameters" ]]
+				then
+						echo "Couldn't pay expense, too much arguments. Status: 4" > /dev/stderr
+						return 4
+				fi
 
-		if [[ ${4+IsSet} = 'IsSet' ]]
-		then
-				echo "Couldn't pay expense, too much arguments. Status: 4" > /dev/stderr
-				return 4
-		fi
+				unset Minimum_Parameters
+				unset Max_Parameters
+		}
 		
 		declare Expense_Name="$1"
 		declare +i Payment_Cost
