@@ -706,11 +706,11 @@ then
 				unset Max_Parameters
 		}
 		
-		declare Expense_Name="$1"
+		declare Expense_Name
 		declare +i Payment_Cost
 		declare -i Expense_Funds
 		declare -i Postransaction_Expense_Funds
-		declare Payment_Message="${3-}"
+		declare Payment_Message
 		declare Payment_DateTime=''
 
 		# Assigning the arguments
@@ -761,7 +761,9 @@ then
 				fi
 
 				# Assigning the rest of the arguments
-				return 99
+				declare Expense_Name="$1"
+				declare Payment_Cost="${2-}"
+				declare Payment_Message="${3-}"
 		}
 
 		local +r -i Name_Is_Expense_Status=$( Name_Is_Expense "$Expense_Name" 2> /dev/null ; echo $? ) # it would be nice to be able to invoke `Name_Is_Expense --echo "$Expense_Name" 2> /dev/null` to echo its exit status directly
@@ -775,22 +777,20 @@ then
 		
 		## Assign the variables
 		# Define the cost of the payment
-		if [[ ${2:+IsPresent} = 'IsPresent'  ]]
+		if [[ "$Payment_Cost" != '' &&  ! "$Payment_Cost" =~ [0-9]+$ ]]
 		then
-				if [[ ! "$2" =~ [0-9]+$ ]]
-				then
-						echo "Couldn't parse the cost of the payment as a positive integer. Status: 6" > /dev/stderr
-						return 6
-				fi
-				declare -i Payment_Cost="$2"
-		else
+				echo "Couldn't parse the cost of the payment as a positive integer. Status: 6" > /dev/stderr
+				return 6
+		elif [[ "$Payment_Cost" = '' ]]
+		then
 				if ! Payment_Cost="$( Read_Expense_Budget "$Expense_Name" )"
 				then
 						echo "Couldn't get the budget of the Expense to use it as the cost of the payment. Status: 7" > /dev/stderr
 						return 7
 				fi
-				declare -i Payment_Cost
 		fi
+		declare -i Payment_Cost
+
 		if ! Expense_Funds="$( Read_Expense_Funds "$Expense_Name" )"
 		then
 				echo "; Couldn't get current funds of the Expense. Status: 8"
