@@ -766,6 +766,7 @@ then
 				declare Payment_Message="${3-}"
 		}
 
+		# Validating the parameters
 		local +r -i Name_Is_Expense_Status=$( Name_Is_Expense "$Expense_Name" 2> /dev/null ; echo $? ) # it would be nice to be able to invoke `Name_Is_Expense --echo "$Expense_Name" 2> /dev/null` to echo its exit status directly
 		if ! ( return $Name_Is_Expense_Status )
 		then
@@ -774,9 +775,7 @@ then
 				return 5
 		fi
 		unset Name_Is_Expense_Status
-		
-		## Assign the variables
-		# Define the cost of the payment
+
 		if [[ "$Payment_Cost" != '' &&  ! "$Payment_Cost" =~ [0-9]+$ ]]
 		then
 				echo "Couldn't parse the cost of the payment as a positive integer. Status: 6" > /dev/stderr
@@ -786,11 +785,19 @@ then
 				if ! Payment_Cost="$( Read_Expense_Budget "$Expense_Name" )"
 				then
 						echo "Couldn't get the budget of the Expense to use it as the cost of the payment. Status: 7" > /dev/stderr
-						return 7
+						return 6
 				fi
 		fi
 		declare -i Payment_Cost
 
+		if ! date --date="$Payment_DateTime" &> /dev/null
+		then
+				echo "Couldn't make payment, the datetime supplied for the moment of the monetary transaction could not be parsed by date command" > /dev/stderr
+				return 6
+		fi
+		
+		## Assign the variables
+		# Define the cost of the payment
 		if ! Expense_Funds="$( Read_Expense_Funds "$Expense_Name" )"
 		then
 				echo "; Couldn't get current funds of the Expense. Status: 8"
