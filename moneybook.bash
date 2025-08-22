@@ -805,6 +805,31 @@ then
 		fi
 		Postransaction_Expense_Funds=$(( Expense_Funds - Payment_Cost ))
 
+		# Format datetime
+		if [[ "$Payment_DateTime" != '' ]]
+		then
+				declare Hour_Is_Present=false
+				declare Log_DateTime_Format='+%a %b %d %Y %H:%Mhs'
+				declare Twelve_Hour_Regex='(1[0-2]|0?[0-9])(:[0-6][0-9])?((am|AM|a.m|A.M)|(pm|PM|p.m|P.M))'
+				declare TwentyFour_Hour_Regex='([0-1]?[0-9]|2[0-4]):[0-5][0-9]'
+		
+				if grep -E -e "$Twelve_Hour_Regex" -e "$TwentyFour_Hour_Regex" <<< "$Payment_DateTime" &> /dev/null
+				then Hour_Is_Present=true
+				else Hour_Is_Present=false
+				fi
+		
+				Payment_DateTime="$( date --date "$Payment_DateTime" "$Log_DateTime_Format" )"
+				unset Log_DateTime_Format
+		
+				if ! $Hour_Is_Present
+				then
+					Payment_DateTime="$( sed -E -e "s#${TwentyFour_Hour_Regex}hs#N/Ahs#" <<< "$Payment_DateTime" )"
+				fi
+				unset Hour_Is_Present
+				unset Twelve_Hour_Regex
+				unset TwentyFour_Hour_Regex
+		fi
+
 		## Display payment screen
 		Payment_Screen="
 		The payment of \`${Payment_Cost}\` will be done over the Fixed Expense \`${Expense_Name}\`\n
