@@ -367,3 +367,15 @@ Log_Payment() {
 		echo "$Log_Line" >> "$Log_File_Path"
 		return
 }
+
+Log_Separation() {
+# Synopsis: Log_Separation <String>Expense_Name <IndexedArray>FundsUpdate [<String?>Log_Message]
+# Note: The indexed array "FundsUpdate" portraits the change in state of the funds of the Expense.
+#	   And it is parsed as follows: <Int>PrevioudFunds//<Int>NewFunds
+# 	  Where the double slash is literal and acts as a separator.
+#	   For example, passing: 1000//1250
+#	   Reads that the Expense previously had 1000 *money, and now has 1250.
+#	   From this it is also deducted that 250 were added. And it will be logged as well.
+# Note: The log message is not expanded in any way, shape or form.
+# Note: You might invoke the function passing an empty string ''(as indicated by the question mark in the synopsis) in the place of the log message
+}
