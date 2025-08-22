@@ -863,7 +863,7 @@ then
 				return 10
 		fi
 
-		if ! Log_Payment "$Expense_Name" "${Expense_Funds}//${Postransaction_Expense_Funds}" "$Payment_Message"
+		if ! Log_Payment "$Expense_Name" "${Expense_Funds}//${Postransaction_Expense_Funds}" "$Payment_Message" "$Payment_DateTime"
 		then
 				echo "; Couldn't log payment, there was an error with the log function." > /dev/stderr
 				echo "Warning: The money was already charged, but it was not recorded in the log file..."
