@@ -383,15 +383,15 @@ Log_Separation() {
                 declare +r Funds_Update
                 declare +r Previous_Funds
                 declare +r New_Funds
-                declare +r Payment_Message
+                declare +r Separation_Message
 
-                if [[ ${1-} = '' ]] ; then echo "Couldn't log payment, missing name of the Expense. Status 1" > /dev/stderr ; return 1 ; fi
-                if [[ ${2-} = '' ]] ; then echo "Couldn't log payment, missing state of funds of the Expense. Status 2" > /dev/stderr ; return 2 ; fi
-                if [[ "$#" -lt 2 && "$#" -gt 3 ]] ; then echo "Couldn't log payment, incorrect amount of arguments passed. Status 3" > /dev/stderr ; return 3 ; fi
+                if [[ ${1-} = '' ]] ; then echo "Couldn't log separation, missing name of the Expense. Status 1" > /dev/stderr ; return 1 ; fi
+                if [[ ${2-} = '' ]] ; then echo "Couldn't log separation, missing state of funds of the Expense. Status 2" > /dev/stderr ; return 2 ; fi
+                if [[ "$#" -lt 2 && "$#" -gt 3 ]] ; then echo "Couldn't log separation, incorrect amount of arguments passed. Status 3" > /dev/stderr ; return 3 ; fi
 
                 declare -r Expense_Name=${1}
                 declare -r Funds_Update=${2}
-                declare -r Payment_Message=${3-}
+                declare -r Separation_Message=${3-}
 
                 # Check for incorrect form of "FundsUpdate"
                 declare +r Valid_Integer_Regex='(-?[1-9][0-9]*|0)'
@@ -399,7 +399,7 @@ Log_Separation() {
 
                 if ! [[ "$Funds_Update" =~ $Correct_FundsUpdate_Format ]]
                 then
-                                echo "Couldn't log payment, the states of the Expense's funds are not formatted correctly. Status 4" > /dev/stderr
+                                echo "Couldn't log separation, the states of the Expense's funds are not formatted correctly. Status 4" > /dev/stderr
                                 return 4
                 fi
 
@@ -420,16 +420,16 @@ Log_Separation() {
                 Logging_Is_Possible
                 case $? in
                 0) ;;
-                1) echo "Couldn't log payment, the log file doesn't exist. Status 5" > /dev/stderr ; return 5 ;;
-                2) echo "Couldn't log payment, the log file is not a regular file. Status 6" > /dev/stderr ; return 6 ;;
-                3) echo "Couldn't log paymebt, the log file is not writable. Status 7" > /dev/stderr ; return 7 ;;
-                *) echo "Couldn't log payment, an unexpected error occurred while checking the log file. Status 8" > /dev/stderr ; return 8 ;;
+                1) echo "Couldn't log separation, the log file doesn't exist. Status 5" > /dev/stderr ; return 5 ;;
+                2) echo "Couldn't log separation, the log file is not a regular file. Status 6" > /dev/stderr ; return 6 ;;
+                3) echo "Couldn't log separation, the log file is not writable. Status 7" > /dev/stderr ; return 7 ;;
+                *) echo "Couldn't log separation, an unexpected error occurred while checking the log file. Status 8" > /dev/stderr ; return 8 ;;
                 esac
 
                 # Checking Expense exists
                 if ! . ~/moneybook/lib/Expense_Methods.bash Name_Is_Expense
                 then
-                                echo -n "; Couldn't log payment, unable to source function to check Expense file. Status 9" > /dev/stderr
+                                echo -n "; Couldn't log separation, unable to source function to check Expense file. Status 9" > /dev/stderr
                                 return 9
                 fi
 
@@ -443,16 +443,16 @@ Log_Separation() {
                 declare Log_Line
                 declare Record_DateTime
                 declare Record_DateTime_Format='+%a %b %e %Y %H:%Mhs' # The datetime might look like `Sat Aug 31 2024 16:20hs'
-                declare -i Payment_Cost
+                declare -i Separation_Cost
 
                 Record_DateTime="$( date "$Record_DateTime_Format" )"
-                Payment_Cost=$(( Previous_Funds - New_Funds ))
-                Log_Line=" [Payment] ${Record_DateTime}, a payment of \`${Payment_Cost}\` *money was made over the Expense \`${Expense_Name}\`( \`${Previous_Funds}\` > \`${New_Funds}\` )"
-                if [[ "$Payment_Message" != '' ]] ; then Log_Line+=": ${Payment_Message}" ; fi
+                Separation_Cost=$(( Previous_Funds - New_Funds ))
+                Log_Line=" [Separation] ${Record_DateTime}, a separation of \`${Separation_Cost}\` *money was made over the Expense \`${Expense_Name}\`( \`${Previous_Funds}\` > \`${New_Funds}\` )"
+                if [[ "$Separation_Message" != '' ]] ; then Log_Line+=": ${Separation_Message}" ; fi
 
                 unset Record_DateTime
                 unset Record_DateTime_Format
-                unset Payment_Costs
+                unset Separation_Costs
 
                 # Write the line to the log file
                 declare -r Log_File_Path='/data/data/com.termux/files/usr/var/log/moneybook.log'
