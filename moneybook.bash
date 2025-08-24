@@ -568,11 +568,12 @@ then
 		# Incorrect input bounce backs 
 		if [[ -z "${1:+IsSet}" ]] ; then echo "Couldn't separate the money, missing arguments: Amount of money and Fixed Expense." > /dev/stderr ; return 2 ; fi
 		if [[ -z "${2:+IsSet}" ]] ; then echo "Couldn't separate the money, missing argument: Fixed Account." > /dev/stderr ; return 3 ; fi
-		if [[ ${3+IsSet} = 'IsSet' ]] ; then echo "Couldn't separate the money, exceeding arguments were passed. Aborting just in case." > /dev/stderr ; return 4 ; fi
+		if [[ ${4+IsSet} = 'IsSet' ]] ; then echo "Couldn't separate the money, exceeding arguments were passed. Aborting just in case." > /dev/stderr ; return 4 ; fi
 		if [[ ! "$1" =~ [0-9]+$ ]] ; then echo "Couldn't parse the second argument as a positive integer." > /dev/stderr ; return 5 ; fi
 
 		declare -i Income="$1"
 		declare Expense_Name="$2"
+		declare Log_Message="${3-}"
 		declare +r Expense_Funds
 		declare +r Expense_Budget
 		declare +r Postoperation_Expense_Funds
@@ -609,11 +610,24 @@ then
 				exit 0
 		fi
 
+		# Log the operation
+		if ! . ~/moneybook/lib/Logging_Methods.bash Log_Separation
+		then
+				echo "Couldn't separate money, unable to source lib files with necessary procedures to log the separation." > /dev/stderr
+				return 3
+		fi
+
+		if ! Log_Separation "$Expense_Name" "${Expense_Funds}//${Postoperation_Expense_Funds}" "$Log_Message"
+		then
+				echo "Couldn't make separation, unable to record and log operation into log file." > /dev/stderr
+				return 4
+		fi
+
 		# Commit the separation
 		if ! Write_Expense "$Expense_Name" "$Postoperation_Expense_Funds"
 		then
 				echo "Couldn't write \`${Postoperation_Expense_Funds}\` to Expense \`${Expense_Name}\`." > /dev/stderr
-				exit 3
+				exit 5
 		fi
 		
 		# Offer to inject exceeding funds
