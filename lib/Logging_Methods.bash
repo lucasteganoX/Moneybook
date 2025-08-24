@@ -251,3 +251,211 @@ Log_Injection() {
 		unset Injection_Log_Line
 		return 0
 }
+
+Log_Payment() {	
+# Synopsis: Log_Payment <String>Expense_Name <IndexedArray>FundsUpdate [<String?>Payment_Message] [<DateTime?>Moment_Of_Monetary_Change]
+# Note: The indexed array "FundsUpdate" portraits the change in state of the funds of the Expense.
+#	   And it is parsed as follows: <Int>PrevioudFunds//<Int>NewFunds
+# 	  Where the double slash is literal and acts as a separator.
+#	   For example, passing: 1250//1000
+#	   Reads that the Expense previously had 1250 *money, and now has 1000.
+#	   From this it is also deducted that the cost was 250. And it will be logged as well.
+# Note: The payment message is not expanded in any way, shape or form.
+# Note:	 The moment of monetary change means "when did my money change other than the moment I am recording the event into moneybook?".
+#		   On output it will be formatted as: %a %b %d %Y %H:%Mhs
+#		   It is a string passed to the date command. However the time of day might be replaced with `N/A`...
+#		   For example: Mon Jan 27 2025 N/Ahs
+# Note: 	You might invoke the function passing an empty string ''(as indicated by the question mark in the synopsis) in the place of either the log message or the moneyary change datetime, or not supply them at all.
+#   		Internally, the function gets rid of the empty strings. Don't alter the order tho of those two tho.
+		
+		declare +r Expense_Name
+		declare +r Funds_Update
+		declare +r Previous_Funds
+		declare +r New_Funds
+		declare +r Payment_Message
+		declare Monetary_Change_DateTime
+		
+		if [[ ${1-} = '' ]] ; then echo "Couldn't log payment, missing name of the Expense. Status 1" > /dev/stderr ; return 1 ; fi
+		if [[ ${2-} = '' ]] ; then echo "Couldn't log payment, missing state of funds of the Expense. Status 2" > /dev/stderr ; return 2 ; fi
+		if [[ "$#" -lt 2 && "$#" -gt 3 ]] ; then echo "Couldn't log payment, incorrect amount of arguments passed. Status 3" > /dev/stderr ; return 3 ; fi
+		
+		declare -r Expense_Name=${1}
+		declare -r Funds_Update=${2}
+		declare -r Payment_Message=${3-}
+		declare Monetary_Change_DateTime=${4-}
+		
+		# Check for incorrect form of "FundsUpdate"
+		declare +r Valid_Integer_Regex='(-?[1-9][0-9]*|0)'
+		declare +r Correct_FundsUpdate_Format="^${Valid_Integer_Regex}//${Valid_Integer_Regex}\$"
+		
+		if [[ "$Monetary_Change_DateTime" != '' ]]
+		then
+				# Monetary change datetime check
+				declare +r TwentyFourHour_Regex='([0-1]?[0-9]|2[0-4]):[0-5][0-9]'
+				declare +r Monetary_DateTime_Format_Regex="^(Mon|Tue|Wed|Thu|Fri|Sat|Sun) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) ([0-2][0-9]|3[0-1]) [1-2][0-9][0-9][0-9] (${TwentyFourHour_Regex}|N/A)hs$"
+				if ! grep -E "$Monetary_DateTime_Format_Regex" <<< "$Monetary_Change_DateTime" &> /dev/null
+				then
+						echo "Couldn't log purchase, the moment of monetary change couldn't be parsed as such. Status 10"
+						return 4
+				fi
+				unset Monetary_DateTime_Format_Regex
+				unset TwentyFourHour_Regex
+
+				# Monetary change formating
+				Monetary_Change_DateTime="(${Monetary_Change_DateTime})"
+		fi
+		
+		if ! [[ "$Funds_Update" =~ $Correct_FundsUpdate_Format ]]
+		then
+				echo "Couldn't log payment, the states of the Expense's funds are not formatted correctly. Status 4" > /dev/stderr
+				return 4
+		fi
+
+		unset Correct_FundsUpdate_Format
+		unset Valid_Integer_Regex
+		
+		# Assign the new and old amount of funds
+		declare Previous_Funds_Regex='^[^/]+'
+		declare New_Funds_Regex='[^/]+$'
+		
+		Previous_Funds="$( grep --color=never -E -o "$Previous_Funds_Regex" <<< "$Funds_Update" )"
+		New_Funds="$( grep --color=never -E -o "$New_Funds_Regex" <<< "$Funds_Update"  )"
+		
+		unset Previous_Funds_Regex
+		unset New_Funds_Regex
+		
+		# Checking log file
+		Logging_Is_Possible
+		case $? in
+		0) ;;
+		1) echo "Couldn't log payment, the log file doesn't exist. Status 5" > /dev/stderr ; return 5 ;;
+		2) echo "Couldn't log payment, the log file is not a regular file. Status 6" > /dev/stderr ; return 6 ;;
+		3) echo "Couldn't log paymebt, the log file is not writable. Status 7" > /dev/stderr ; return 7 ;;
+		*) echo "Couldn't log payment, an unexpected error occurred while checking the log file. Status 8" > /dev/stderr ; return 8 ;;
+		esac
+		
+		# Checking Expense exists
+		if ! . ~/moneybook/lib/Expense_Methods.bash Name_Is_Expense
+		then
+				echo -n "; Couldn't log payment, unable to source function to check Expense file. Status 9" > /dev/stderr
+				return 9
+		fi
+
+		if ! Name_Is_Expense "$Expense_Name"
+		then
+				echo -n "; Couldn't check the name \`${Expense_Name}\` corresponds to a valid Expense file. Status 10" > /dev/stderr
+				return 10
+		fi
+
+		# Creating the log line
+		declare Log_Line
+		declare Record_DateTime
+		declare Record_DateTime_Format='+%a %b %e %Y %H:%Mhs' # The datetime might look like `Sat Aug 31 2024 16:20hs'
+		declare -i Payment_Cost
+		
+		Record_DateTime="$( date "$Record_DateTime_Format" )"
+		Payment_Cost=$(( Previous_Funds - New_Funds ))
+		Log_Line=" [Payment] ${Record_DateTime}${Monetary_Change_DateTime}, a payment of \`${Payment_Cost}\` *money was made over the Expense \`${Expense_Name}\`( \`${Previous_Funds}\` > \`${New_Funds}\` )"
+		if [[ "$Payment_Message" != '' ]] ; then Log_Line+=": ${Payment_Message}" ; fi
+		
+		unset Record_DateTime
+		unset Record_DateTime_Format
+		unset Payment_Costs
+		
+		# Write the line to the log file
+		declare -r Log_File_Path='/data/data/com.termux/files/usr/var/log/moneybook.log'
+		echo "$Log_Line" >> "$Log_File_Path"
+		return
+}
+
+Log_Separation() {
+# Synopsis: Log_Separation <String>Expense_Name <IndexedArray>FundsUpdate [<String?>Log_Message]
+# Note: The indexed array "FundsUpdate" portraits the change in state of the funds of the Expense.
+#	   And it is parsed as follows: <Int>PrevioudFunds//<Int>NewFunds
+# 	  Where the double slash is literal and acts as a separator.
+#	   For example, passing: 1000//1250
+#	   Reads that the Expense previously had 1000 *money, and now has 1250.
+#	   From this it is also deducted that 250 were added. And it will be logged as well.
+# Note: The log message is not expanded in any way, shape or form.
+# Note: You might invoke the function passing an empty string ''(as indicated by the question mark in the synopsis) in the place of the log message
+
+                declare +r Expense_Name
+                declare +r Funds_Update
+                declare +r Previous_Funds
+                declare +r New_Funds
+                declare +r Separation_Message
+
+                if [[ ${1-} = '' ]] ; then echo "Couldn't log separation, missing name of the Expense. Status 1" > /dev/stderr ; return 1 ; fi
+                if [[ ${2-} = '' ]] ; then echo "Couldn't log separation, missing state of funds of the Expense. Status 2" > /dev/stderr ; return 2 ; fi
+                if [[ "$#" -lt 2 && "$#" -gt 3 ]] ; then echo "Couldn't log separation, incorrect amount of arguments passed. Status 3" > /dev/stderr ; return 3 ; fi
+
+                declare -r Expense_Name=${1}
+                declare -r Funds_Update=${2}
+                declare -r Separation_Message=${3-}
+
+                # Check for incorrect form of "FundsUpdate"
+                declare +r Valid_Integer_Regex='(-?[1-9][0-9]*|0)'
+                declare +r Correct_FundsUpdate_Format="^${Valid_Integer_Regex}//${Valid_Integer_Regex}\$"
+
+                if ! [[ "$Funds_Update" =~ $Correct_FundsUpdate_Format ]]
+                then
+                                echo "Couldn't log separation, the states of the Expense's funds are not formatted correctly. Status 4" > /dev/stderr
+                                return 4
+                fi
+
+                unset Correct_FundsUpdate_Format
+                unset Valid_Integer_Regex
+
+                # Assign the new and old amount of funds
+                declare Previous_Funds_Regex='^[^/]+'
+                declare New_Funds_Regex='[^/]+$'
+
+                Previous_Funds="$( grep --color=never -E -o "$Previous_Funds_Regex" <<< "$Funds_Update" )"
+                New_Funds="$( grep --color=never -E -o "$New_Funds_Regex" <<< "$Funds_Update"  )"
+
+                unset Previous_Funds_Regex
+                unset New_Funds_Regex
+
+                # Checking log file
+                Logging_Is_Possible
+                case $? in
+                0) ;;
+                1) echo "Couldn't log separation, the log file doesn't exist. Status 5" > /dev/stderr ; return 5 ;;
+                2) echo "Couldn't log separation, the log file is not a regular file. Status 6" > /dev/stderr ; return 6 ;;
+                3) echo "Couldn't log separation, the log file is not writable. Status 7" > /dev/stderr ; return 7 ;;
+                *) echo "Couldn't log separation, an unexpected error occurred while checking the log file. Status 8" > /dev/stderr ; return 8 ;;
+                esac
+
+                # Checking Expense exists
+                if ! . ~/moneybook/lib/Expense_Methods.bash Name_Is_Expense
+                then
+                                echo -n "; Couldn't log separation, unable to source function to check Expense file. Status 9" > /dev/stderr
+                                return 9
+                fi
+
+                if ! Name_Is_Expense "$Expense_Name"
+                then
+                                echo -n "; Couldn't check the name \`${Expense_Name}\` corresponds to a valid Expense file. Status 10" > /dev/stderr
+                                return 10
+                fi
+
+                # Creating the log line
+                declare Log_Line
+                declare Record_DateTime
+                declare Record_DateTime_Format='+%a %b %e %Y %H:%Mhs' # The datetime might look like `Sat Aug 31 2024 16:20hs'
+                declare -i Separation_Cost
+
+                Record_DateTime="$( date "$Record_DateTime_Format" )"
+                Separation_Cost=$(( Previous_Funds - New_Funds ))
+                Log_Line=" [Separation] ${Record_DateTime}, a separation of \`${Separation_Cost}\` *money was made over the Expense \`${Expense_Name}\`( \`${Previous_Funds}\` > \`${New_Funds}\` )"
+                if [[ "$Separation_Message" != '' ]] ; then Log_Line+=": ${Separation_Message}" ; fi
+
+                unset Record_DateTime
+                unset Record_DateTime_Format
+                unset Separation_Costs
+
+                # Write the line to the log file
+                declare -r Log_File_Path='/data/data/com.termux/files/usr/var/log/moneybook.log'
+                echo "$Log_Line" >> "$Log_File_Path"
+                return
+}

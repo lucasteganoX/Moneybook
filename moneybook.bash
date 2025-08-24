@@ -32,11 +32,12 @@ Money separation mode:\n
 \t	Separation mode allows you to save money for a given Fixed Expense, summing the amount to its funds. If the funds were to overflow the Budget of the Expense, then you are offered to Inject the exceeding money.\n
 \t	It is the mean to get money destined to Pay a determined Fixed Spense.\n
 Fixed Expense payment mode:\n
-\t	Concrete synopsis: ${0} pay PhoneBill 1150\n
-\t	Abstract synopsis: ${0} pay FixedExpenseName [ PaymentPrice ]\n
+\t	Concrete synopsis: ${0} pay PhoneBill 1150 'I also bought a 20 bucks internet package'\n
+\t	Abstract synopsis: ${0} pay FixedExpenseName [ PaymentPrice ] [ Log Message ]\n
 \n
 \t	Fixed Expense payment mode allows you to pay a determined Fixed Expense.\n
 \t	The price of the payment will be discounted from the funds of the Expense. The final price of the payment might be specified, in that case that is the amount of money to be discounted. Otherwise, the budgeted amount, aka the Expense's Budget, is to be discounted.\n
+\t	Each purchase is logged into the \`moneybook.log\` file, which is under the log directory of the OS. If given a message for the purchase, it gets logged along with the rest of the purchase.\n
 \n
 \t\t		Written by: @LucasYata
 "
@@ -567,11 +568,12 @@ then
 		# Incorrect input bounce backs 
 		if [[ -z "${1:+IsSet}" ]] ; then echo "Couldn't separate the money, missing arguments: Amount of money and Fixed Expense." > /dev/stderr ; return 2 ; fi
 		if [[ -z "${2:+IsSet}" ]] ; then echo "Couldn't separate the money, missing argument: Fixed Account." > /dev/stderr ; return 3 ; fi
-		if [[ ${3+IsSet} = 'IsSet' ]] ; then echo "Couldn't separate the money, exceeding arguments were passed. Aborting just in case." > /dev/stderr ; return 4 ; fi
+		if [[ ${4+IsSet} = 'IsSet' ]] ; then echo "Couldn't separate the money, exceeding arguments were passed. Aborting just in case." > /dev/stderr ; return 4 ; fi
 		if [[ ! "$1" =~ [0-9]+$ ]] ; then echo "Couldn't parse the second argument as a positive integer." > /dev/stderr ; return 5 ; fi
 
 		declare -i Income="$1"
 		declare Expense_Name="$2"
+		declare Log_Message="${3-}"
 		declare +r Expense_Funds
 		declare +r Expense_Budget
 		declare +r Postoperation_Expense_Funds
@@ -608,11 +610,24 @@ then
 				exit 0
 		fi
 
+		# Log the operation
+		if ! . ~/moneybook/lib/Logging_Methods.bash Log_Separation
+		then
+				echo "Couldn't separate money, unable to source lib files with necessary procedures to log the separation." > /dev/stderr
+				return 3
+		fi
+
+		if ! Log_Separation "$Expense_Name" "${Expense_Funds}//${Postoperation_Expense_Funds}" "$Log_Message"
+		then
+				echo "Couldn't make separation, unable to record and log operation into log file." > /dev/stderr
+				return 4
+		fi
+
 		# Commit the separation
 		if ! Write_Expense "$Expense_Name" "$Postoperation_Expense_Funds"
 		then
 				echo "Couldn't write \`${Postoperation_Expense_Funds}\` to Expense \`${Expense_Name}\`." > /dev/stderr
-				exit 3
+				exit 5
 		fi
 		
 		# Offer to inject exceeding funds
@@ -672,29 +687,100 @@ fi
 if [[ "$1" = 'pay' ]]
 then
 		Payment_Flow() {
+		DateTimeFlag_IsPresent() { grep -Ew -- '-d|--date' <<< "$@" &> /dev/null ; }
 		if ! . ~/moneybook/lib/Expense_Methods.bash
 		then
 				echo "Couldn't source \`~/moneybook/lib/Expense_Methods.bash\` file containing necessary proceedures to treat Fixed Expenses. Status: 2" > /dev/stderr
 				return 2
 		fi
 
-		if [[ ${1+IsSet} != 'IsSet' ]]
-		then
-				echo "Couldn't pay expense, missing argument: Expense name. Status: 3" > /dev/stderr
-				return 3
-		fi
+		# Check quantity of arguments
+		{
+				declare -i Minimum_Parameters=1
+				declare -i Max_Parameters=3
+				
+				if DateTimeFlag_IsPresent "$@"
+				then
+						Minimum_Parameters+=2
+						Max_Parameters+=2
+						# As a sidenote, this works only because the variables are integers.
+				fi
+				
+				if [[ "$#" -lt "$Minimum_Parameters" ]]
+				then
+						echo "Couldn't pay expense, too little arguments. Status: 3" > /dev/stderr
+						return 3
+				elif [[ "$#" -gt "$Max_Parameters" ]]
+				then
+						echo "Couldn't pay expense, too much arguments. Status: 4" > /dev/stderr
+						return 4
+				fi
 
-		if [[ ${3+IsSet} = 'IsSet' ]]
-		then
-				echo "Couldn't pay expense, too much arguments. Status: 4" > /dev/stderr
-				return 4
-		fi
+				unset Minimum_Parameters
+				unset Max_Parameters
+		}
 		
-		declare Expense_Name="$1"
+		declare Expense_Name
 		declare +i Payment_Cost
 		declare -i Expense_Funds
 		declare -i Postransaction_Expense_Funds
+		declare Payment_Message
+		declare Payment_DateTime=''
 
+		# Assigning the arguments
+		{
+				# Assigning the datetime flag
+				if DateTimeFlag_IsPresent "$@"
+				then
+						declare -i DateTime_Flag_Index
+						declare -i DateTime_Argument_Index
+
+						declare -i Last_Parameter_Index="$#"
+						for (( Parameter_Index=1 ; "$Parameter_Index"<="$Last_Parameter_Index" ; Parameter_Index++ ))
+						do
+								declare Current_Parameter="${!Parameter_Index}"
+								if [[ "$Current_Parameter" != '-d' && "$Current_Parameter" != '--datetime' ]] ; then continue ; fi
+								if [[ "$Parameter_Index" -eq "$Last_Parameter_Index" ]]
+								then
+										echo "Couldn't make payment, datetime flag has no argument. Status 5" > /dev/stderr
+										return 5
+								fi
+
+								declare -i Payment_DateTime_Index=$(( Parameter_Index + 1 ))
+								Payment_DateTime="${!Payment_DateTime_Index}"
+
+								DateTime_Flag_Index="$Parameter_Index"
+								DateTime_Argument_Index="$Payment_DateTime_Index"
+								break
+						done
+						unset Last_Parameter_Index
+						unset Current_Parameter
+						unset Payment_DateTime_Index
+
+						# Excluding the flag and its argument from the parameters
+						DateTime_Argument_Index=$(( DateTime_Argument_Index - 1 ))
+						DateTime_Flag_Index=$(( DateTime_Flag_Index - 1 ))
+
+						declare -a Rest_Of_Parameters[0]
+						Rest_Of_Parameters=( "$@" )
+						unset 'Rest_Of_Parameters[$DateTime_Argument_Index]'
+						unset 'Rest_Of_Parameters[$DateTime_Flag_Index]'
+						
+						Rest_Of_Parameters=( "${Rest_Of_Parameters[@]}" )
+						set -- "${Rest_Of_Parameters[@]}"
+
+						unset DateTime_Flag_Index
+						unset DateTime_Argument_Index
+
+				fi
+
+				# Assigning the rest of the arguments
+				declare Expense_Name="$1"
+				declare Payment_Cost="${2-}"
+				declare Payment_Message="${3-}"
+		}
+
+		# Validating the parameters
 		local +r -i Name_Is_Expense_Status=$( Name_Is_Expense "$Expense_Name" 2> /dev/null ; echo $? ) # it would be nice to be able to invoke `Name_Is_Expense --echo "$Expense_Name" 2> /dev/null` to echo its exit status directly
 		if ! ( return $Name_Is_Expense_Status )
 		then
@@ -703,25 +789,29 @@ then
 				return 5
 		fi
 		unset Name_Is_Expense_Status
-		
-		## Assign the variables
-		# Define the cost of the payment
-		if [[ ${2:+IsPresent} = 'IsPresent'  ]]
+
+		if [[ "$Payment_Cost" != '' &&  ! "$Payment_Cost" =~ [0-9]+$ ]]
 		then
-				if [[ ! "$2" =~ [0-9]+$ ]]
-				then
-						echo "Couldn't parse the cost of the payment as a positive integer. Status: 6" > /dev/stderr
-						return 6
-				fi
-				declare -i Payment_Cost="$2"
-		else
+				echo "Couldn't parse the cost of the payment as a positive integer. Status: 6" > /dev/stderr
+				return 6
+		elif [[ "$Payment_Cost" = '' ]]
+		then
 				if ! Payment_Cost="$( Read_Expense_Budget "$Expense_Name" )"
 				then
 						echo "Couldn't get the budget of the Expense to use it as the cost of the payment. Status: 7" > /dev/stderr
-						return 7
+						return 6
 				fi
-				declare -i Payment_Cost
 		fi
+		declare -i Payment_Cost
+
+		if ! date --date="$Payment_DateTime" &> /dev/null
+		then
+				echo "Couldn't make payment, the datetime supplied for the moment of the monetary transaction could not be parsed by date command" > /dev/stderr
+				return 6
+		fi
+		
+		## Assign the variables
+		# Define the cost of the payment
 		if ! Expense_Funds="$( Read_Expense_Funds "$Expense_Name" )"
 		then
 				echo "; Couldn't get current funds of the Expense. Status: 8"
@@ -729,15 +819,40 @@ then
 		fi
 		Postransaction_Expense_Funds=$(( Expense_Funds - Payment_Cost ))
 
+		# Format datetime
+		if [[ "$Payment_DateTime" != '' ]]
+		then
+				declare Hour_Is_Present=false
+				declare Log_DateTime_Format='+%a %b %d %Y %H:%Mhs'
+				declare Twelve_Hour_Regex='(1[0-2]|0?[0-9])(:[0-6][0-9])?((am|AM|a.m|A.M)|(pm|PM|p.m|P.M))'
+				declare TwentyFour_Hour_Regex='([0-1]?[0-9]|2[0-4]):[0-5][0-9]'
+		
+				if grep -E -e "$Twelve_Hour_Regex" -e "$TwentyFour_Hour_Regex" <<< "$Payment_DateTime" &> /dev/null
+				then Hour_Is_Present=true
+				else Hour_Is_Present=false
+				fi
+		
+				Payment_DateTime="$( date --date "$Payment_DateTime" "$Log_DateTime_Format" )"
+				unset Log_DateTime_Format
+		
+				if ! $Hour_Is_Present
+				then
+					Payment_DateTime="$( sed -E -e "s#${TwentyFour_Hour_Regex}hs#N/Ahs#" <<< "$Payment_DateTime" )"
+				fi
+				unset Hour_Is_Present
+				unset Twelve_Hour_Regex
+				unset TwentyFour_Hour_Regex
+		fi
+
 		## Display payment screen
-		Payment_Message="
+		Payment_Screen="
 		The payment of \`${Payment_Cost}\` will be done over the Fixed Expense \`${Expense_Name}\`\n
 		\t	Expense funds: ${Expense_Funds}\n
 		\t	Payment Cost: ${Payment_Cost}\n
 		\t	Remaining funds after payment: ${Postransaction_Expense_Funds}\n
 		"
-		echo -e $Payment_Message
-		unset Payment_Message
+		echo -e $Payment_Screen
+		unset Payment_Screen
 
 		# Ask for confirmation
 		read -n 1 -p 'Proceed with the payment? Y/N: ' ; echo
@@ -753,6 +868,19 @@ then
 		then
 				echo "; Couldn't take off the money for the payment off the Expense. Status: 9"
 				return 9
+		fi
+
+		# Log the payment
+		if ! . ~/moneybook/lib/Logging_Methods.bash Log_Payment
+		then
+				echo "Couldn't log the payment, unable to source logging function. Status 10" > /dev/stderr
+				return 10
+		fi
+
+		if ! Log_Payment "$Expense_Name" "${Expense_Funds}//${Postransaction_Expense_Funds}" "$Payment_Message" "$Payment_DateTime"
+		then
+				echo "; Couldn't log payment, there was an error with the log function." > /dev/stderr
+				echo "Warning: The money was already charged, but it was not recorded in the log file..."
 		fi
 
 		echo 'Payment committed successfully :)'
