@@ -7,7 +7,7 @@ File_Is_Account() { # Abstract Synopsis: File_Is_Account PresuntAccountFilePath 
 		if [[ ! -f "$File_Path" ]] ; then return 1 ; fi
 		if [[ ! -r "$File_Path" ]] ; then return 1 ; fi
 		if [[ ! "$( head --lines=1 "$File_Path" )" =~ ^'# This is a moneybook Account file'[[:blank:]]*$ ]] ; then return 1 ; fi
-		if [[ ! -n "$( grep -E 'Foundings=[0-9]+[[:blank:]]*$' "$File_Path" )" ]] ; then return 1 ; fi
+		if [[ ! -n "$( grep -E 'Foundings=-?[0-9]+[[:blank:]]*$' "$File_Path" )" ]] ; then return 1 ; fi
 		if [[ ! -n "$( grep -E 'Share=[0-9]+[[:blank:]]*$' "$File_Path" )" ]] ; then return 1 ; fi
 		return 0
 }
@@ -30,7 +30,7 @@ Read_Account() { # Read_Account MyFooAccountName # echoes: Foundings of the Acco
 
         if ! File_Is_Account "$Account_File_Path" ; then return 2 ; fi
         Account_Foundings="$( Get_Foundings "$Account_File_Path" )"
-        if [[ ! "$Account_Foundings" =~ ^[0-9]+$ ]] ; then return 3 ; fi
+        if [[ ! "$Account_Foundings" =~ ^-?[0-9]+$ ]] ; then return 3 ; fi
         echo $Account_Foundings
 		return 0
 }
