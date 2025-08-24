@@ -43,7 +43,7 @@ Write_Account() { # Write_Account MyFooAccountName MyNewIntegerValueFoundings # 
 		declare -r New_Foundings=${2}
 
 		if ! File_Is_Account "$Account_File_Path" ; then return 2 ; fi
-		if [[ ! "$New_Foundings" =~ ^[0-9]+$ ]] ; then return 3 ; fi
+		if [[ ! "$New_Foundings" =~ ^-?[0-9]+$ ]] ; then return 3 ; fi
 		if ! sed --in-place --follow-symlinks "s/Foundings=.*$/Foundings=${New_Foundings}/" "$Account_File_Path" ; then return 4 ; fi
 		return 0
 }
