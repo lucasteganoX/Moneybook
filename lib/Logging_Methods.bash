@@ -84,7 +84,7 @@ Log_Injection() {
 # Note: 	You might invoke the function passing an empty string ''(as indicated by the question mark in the synopsis) in the place of either the log message or the moneyary change datetime, or not supply them at all.
 #   		Internally, the function gets rid of the empty strings. Don't alter the order tho of those two tho.
 		Parameter_Is_Account_Object() {
-				declare -r Correct_Object_Syntax='^[^/]+//[0-9]+//[0-9]+$'
+				declare -r Correct_Object_Syntax='^[^/]+//-?[0-9]+//-?[0-9]+$'
 				declare -r Account_Object="$1"
 
 				[[ "$Account_Object" =~ $Correct_Object_Syntax ]]
