@@ -29,4 +29,25 @@ Create_Account() {
 				echo "Couldn't create Account, the funds supplied are not either a positive or negative integer, or zero." > /dev/stderr
 				return 2
 		fi
+
+		# Import libraries
+		if ! . ~/moneybook/lib/Account_Methods.bash
+		then
+				echo "Couldn't create Account, couldn't import libraries necessary for the creation." > /dev/stderr
+				return 3
+		fi
+
+		# Check Account name doesn't exist
+		declare -a Existing_Account_Names[0]
+		Existing_Account_Names=( $( basename --multiple $( Get_Accounts ) ) )
+
+		for Existing_Account_Name in "${Existing_Account_Names[@]}"
+		do
+				if [[ "$Account_Name" = "$Existing_Account_Name" ]]
+				then
+						echo "Couldn't create Account, there's already an Account under that name." > /dev/stderr
+						return 4
+				fi
+		done
+		unset Existing_Account_Names
 }

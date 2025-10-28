@@ -50,20 +50,7 @@ Unrecognized mode of operation: ${1-nothing}. Refer to the help message by execu
 # ------------- Injection mode --
 # Helper functions
 
-Get_Accounts() {
-# Note: This was an inner function of 'Print_Account_Shares'.
-# All this problem could be avoided if the Accounts were in a directory for themselves
-# rather than in the root dir of the program among all other files
-# attention: if a file without an extension other than an Account gets into the root dir
-# it will have nasty consequences. Like a LOG file for example.
-		for File in ~/moneybook/*
-		do
-				if [[ -d $File ]] ; then continue ; fi
-				if [[ -L $File ]] ; then continue ; fi
-				if ! File_Is_Account "$File" ; then continue ; fi
-				echo "$File"
-		done
-}
+# Get_Accounts() → Account_Methods.bash
 
 Print_Account_Shares() { # Synopsis: Print_Account_Shares ['DisplayAccountNames'] # Abstract: Displays the shares of all Accounts, if any argument is given displays the Account each value corresponds
 		declare Shares="$( grep --color=never --with-filename 'Share=' $( Get_Accounts ))"

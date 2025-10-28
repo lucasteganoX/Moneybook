@@ -59,3 +59,18 @@ Read_Account_Share() { # Read_Account_Share MyAccountName # returns: 0 if ok, 1 
 		echo $Percentage
 		return 0
 }
+
+Get_Accounts() {
+# Note: This was an inner function of 'Print_Account_Shares'.
+# All this problem could be avoided if the Accounts were in a directory for themselves
+# rather than in the root dir of the program among all other files
+# attention: if a file without an extension other than an Account gets into the root dir
+# it will have nasty consequences. Like a LOG file for example.
+		for File in ~/moneybook/*
+		do
+				if [[ -d $File ]] ; then continue ; fi
+				if [[ -L $File ]] ; then continue ; fi
+				if ! File_Is_Account "$File" ; then continue ; fi
+				echo "$File"
+		done
+}
