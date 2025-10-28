@@ -51,6 +51,18 @@ Create_Account() {
 		done
 		unset Existing_Account_Names
 
+		# Put together the file contents
+		declare Account_File_Content
+		read -d '' Account_File_Content <<- EOF
+		# This is a moneybook Account file
+		Share=${Account_Share}
+		Foundings=${Account_Funds}
+
+		${Account_Message-}
+		EOF
+		    # can't believe a year has past and I still haven't fixed the misspell "foundings"
+		unset Account_File_Content
+
 		return
 		# Incorrect share among Accounts warning
 		declare -i Total_Share_Percentage
