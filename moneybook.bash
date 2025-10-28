@@ -51,13 +51,7 @@ Unrecognized mode of operation: ${1-nothing}. Refer to the help message by execu
 # Helper functions
 
 # Get_Accounts() → Account_Methods.bash
-
-Print_Account_Shares() { # Synopsis: Print_Account_Shares ['DisplayAccountNames'] # Abstract: Displays the shares of all Accounts, if any argument is given displays the Account each value corresponds
-		declare Shares="$( grep --color=never --with-filename 'Share=' $( Get_Accounts ))"
-		if [[ ${1+Parameter1WasNotPassed} != 'Parameter1WasNotPassed' ]] ; then cut --delim='=' --field=2 <<< $Shares ; return 0 ; fi
-		grep --color=never -o '[^/]*$' <<< $Shares |
-		sed 's/Share=//' ; # this should look like: "MyAccountName:ShareIntegerValue" 'recreation:20'
-}
+# Print_Account_Shares() → Account_Methods.bash
 
 Splitting_Is_Total() { # Synopsis: Splitting_Is_Total # Abstract: Checks that the 100% of the money is split among all the Accounts # returns: 0 if true, 1 if false
 		declare -i Sum_Of_Shares=0 # Should end up being 100

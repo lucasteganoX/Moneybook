@@ -74,3 +74,10 @@ Get_Accounts() {
 				echo "$File"
 		done
 }
+
+Print_Account_Shares() { # Synopsis: Print_Account_Shares ['DisplayAccountNames'] # Abstract: Displays the shares of all Accounts, if any argument is given displays the Account each value corresponds
+		declare Shares="$( grep --color=never --with-filename 'Share=' $( Get_Accounts ))"
+		if [[ ${1+Parameter1WasNotPassed} != 'Parameter1WasNotPassed' ]] ; then cut --delim='=' --field=2 <<< $Shares ; return 0 ; fi
+		grep --color=never -o '[^/]*$' <<< $Shares |
+		sed 's/Share=//' ; # this should look like: "MyAccountName:ShareIntegerValue" 'recreation:20'
+}

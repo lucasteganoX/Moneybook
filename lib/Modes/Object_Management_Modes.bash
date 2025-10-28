@@ -50,4 +50,23 @@ Create_Account() {
 				fi
 		done
 		unset Existing_Account_Names
+
+		return
+		# Incorrect share among Accounts warning
+		declare -i Total_Share_Percentage
+		for Share in $( Print_Account_Shares ) ; do Total_Share_Percentage+="$Share" ; done
+		Total_Share_Percentage+="$Account_Share"
+		if [[ "$Total_Share_Percentage" -ne 100 ]]
+		then
+				declare -i Difference=$(( 100 - Total_Share_Percentage ))
+				declare -i Absolute_Difference=${Difference#-}
+				if [[ "$Difference" -gt 0 ]]
+				then echo "The total share among Accounts, taking this one into consideration, undershoots a 100% by ${Absolute_Difference} percent."
+				else echo "The total share among Accounts taking this one into consideration, overshoots a 100% by ${Absolute_Difference} percent."
+				fi
+				echo "In order to be able to Inject money, the sum of all of your Accounts must sum a 100% of the incoming money. You may still proceed."
+				unset Absolute_Difference
+				unset Difference
+		fi
+		unset Total_Share_Percentage
 }
