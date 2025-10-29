@@ -61,6 +61,14 @@ Create_Account() {
 		${Account_Message-}
 		EOF
 		    # can't believe a year has past and I still haven't fixed the misspell "foundings"
+
+		# Write the file
+		if [[ ! -w ~/moneybook ]]
+		then
+				echo "$Couldn't create Account, lack of write permission over the directory where Accounts are stored."
+				return 5
+		fi
+		echo "$Account_File_Content" > ~/moneybook/"$Account_Name"
 		unset Account_File_Content
 
 		return
