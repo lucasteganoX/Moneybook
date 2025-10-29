@@ -71,7 +71,6 @@ Create_Account() {
 		echo "$Account_File_Content" > ~/moneybook/"$Account_Name"
 		unset Account_File_Content
 
-		return
 		# Incorrect share among Accounts warning
 		declare -i Total_Share_Percentage
 		for Share in $( Print_Account_Shares ) ; do Total_Share_Percentage+="$Share" ; done
