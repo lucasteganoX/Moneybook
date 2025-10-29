@@ -478,4 +478,14 @@ Log_Account_Creation() {
 				echo "Couldn't log Account creation, the funds supplied are not either a positive or negative integer, or zero." > /dev/stderr
 				return 2
 		fi
+
+		# Check log file
+		Logging_Is_Possible
+		case $? in
+		0) ;;
+		1) echo "Couldn't log Account creation, the log file doesn't exist." > /dev/stderr ; return 3 ;;
+		2) echo "Couldn't log Account creation, the log file is not a regular file." > /dev/stderr ; return 4 ;;
+		3) echo "Couldn't log Account creation, the log file is not writable." > /dev/stderr ; return 5 ;;
+		*) echo "Couldn't log Account creation, an unexpected error occurred while checking the log file." > /dev/stderr ; return 6 ;;
+		esac
 }
