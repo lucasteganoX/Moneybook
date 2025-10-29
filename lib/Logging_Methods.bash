@@ -462,5 +462,8 @@ Log_Separation() {
 
 Log_Account_Creation() {
 # Synopsis: Log_Account_Creation <String>Account_Name <Int+>Account_Share <Int+-0>Account_Funds
+		declare Account_Name=${1-}
+		declare Account_Share=${2-}
+		declare Account_Funds=${3-}
 
 }
