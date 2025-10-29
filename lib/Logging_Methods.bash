@@ -488,4 +488,17 @@ Log_Account_Creation() {
 		3) echo "Couldn't log Account creation, the log file is not writable." > /dev/stderr ; return 5 ;;
 		*) echo "Couldn't log Account creation, an unexpected error occurred while checking the log file." > /dev/stderr ; return 6 ;;
 		esac
+
+		# Checking Account exists
+		if ! . ~/moneybook/lib/Account_Methods.bash File_Is_Account
+		then
+				echo -n "; Couldn't log Account creation, unable to source function to check Account file." > /dev/stderr
+				return 7
+		fi
+
+		if ! File_Is_Account ~/moneybook/"$Account_Name"
+		then
+				echo "Couldn't log Account creation, couldn't check the file \`~/moneybook/${Account_Name}\` corresponds to a valid Account file." > /dev/stderr
+				return 8
+		fi
 }
