@@ -501,4 +501,15 @@ Log_Account_Creation() {
 				echo "Couldn't log Account creation, couldn't check the file \`~/moneybook/${Account_Name}\` corresponds to a valid Account file." > /dev/stderr
 				return 8
 		fi
+
+		# Creating the log line
+		declare Log_Line
+		declare Current_DateTime
+		declare DateTime_Format='+%a %b %e %Y %H:%Mhs' # The datetime might look like `Sat Aug 31 2024 16:20hs'
+
+		Current_DateTime="$( date "$DateTime_Format" )"
+		Log_Line=" [Account_Creation] ${Current_DateTime}, under the name \`${Account_Name}\`, with a share of \`${Account_Share}\` percent and \`${Account_Funds}\` funds of *money."
+		unset Current_DateTime
+		unset DateTime_Format
+		unset Log_Line
 }
