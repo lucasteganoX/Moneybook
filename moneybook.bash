@@ -39,6 +39,14 @@ Fixed Expense payment mode:\n
 \t	The price of the payment will be discounted from the funds of the Expense. The final price of the payment might be specified, in that case that is the amount of money to be discounted. Otherwise, the budgeted amount, aka the Expense's Budget, is to be discounted.\n
 \t	Each purchase is logged into the \`moneybook.log\` file, which is under the log directory of the OS. If given a message for the purchase, it gets logged along with the rest of the purchase.\n
 \n
+Account creation mode:\n
+\t	Concrete synopsis: ${0} create account selfinvestment 25 10000 "This is the Account I will use for education and personal growth."\n
+\t	Abstract synopsis: ${0} create account MyAccountName ShareOfTheAccount StartingFunds OptionalLetter\n
+\n
+\t	Account creation mode allows you to crete Accounts for you to use. You are required to supply an unused name, the share of money the Account will take from money injected, and some initial funds.\n
+\t	Optionally, you can supply a text message to be used for the Account. This message might be supplied as shown in the synopsis, or either appending -e, --editor, or --write-message to the command in order to write it in a text editor (useful for multiline, or complex texts), or supplying it as standard input via a pipeline, redirection or as a heredoc for example.\n
+\t	If you supply a message in different ways at the same time, the one provided via standard input takes precedence, followed by the one given via text editor and then the one gives as in the synopsis.\n
+\t	The funds might be positive, negative or zero.\n
 \t\t		Written by: @LucasYata
 "
 
