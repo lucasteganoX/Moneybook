@@ -466,4 +466,16 @@ Log_Account_Creation() {
 		declare Account_Share=${2-}
 		declare Account_Funds=${3-}
 
+		# Integer parameters check
+		if [[ ! "$Account_Share" =~ ^[0-9]+$ ]]
+		then
+				echo "Couldn't log Account creation, the share supplied is not an integer value." > /dev/stderr
+				return 2
+		fi
+
+		if [[ ! "$Account_Funds" =~ ^(0|-?[1-9][0-9]*)$ ]]
+		then
+				echo "Couldn't log Account creation, the funds supplied are not either a positive or negative integer, or zero." > /dev/stderr
+				return 2
+		fi
 }
