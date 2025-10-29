@@ -511,5 +511,9 @@ Log_Account_Creation() {
 		Log_Line=" [Account_Creation] ${Current_DateTime}, under the name \`${Account_Name}\`, with a share of \`${Account_Share}\` percent and \`${Account_Funds}\` funds of *money."
 		unset Current_DateTime
 		unset DateTime_Format
-		unset Log_Line
+
+		# Write to the log file
+		declare -r Log_File_Path='/data/data/com.termux/files/usr/var/log/moneybook.log'
+		echo "$Log_Line" >> "$Log_File_Path"
+		return
 }
