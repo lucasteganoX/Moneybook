@@ -459,3 +459,8 @@ Log_Separation() {
                 echo "$Log_Line" >> "$Log_File_Path"
                 return
 }
+
+Log_Account_Creation() {
+# Synopsis: Log_Account_Creation <String>Account_Name <Int+>Account_Share <Int+-0>Account_Funds
+
+}
