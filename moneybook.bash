@@ -883,6 +883,10 @@ fi
 if [[ "$1" = 'create' && "${2,}" = 'account' ]]
 then
 		Account_Creation_Flow() {
+		declare Account_Name=${1-}
+		declare Account_Share=${2-}
+		declare Account_Funds=${3-}
+		declare Account_Message
 
 		}
 fi
