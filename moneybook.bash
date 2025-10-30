@@ -906,6 +906,41 @@ then
 				echo "Couldn't create Account, the funds supplied are not either a positive or negative integer, or zero." > /dev/stderr
 				return 2
 		fi
+
+		# Assigning the Account message
+		There_Is_STDIN() {
+				# Source: https://unix.stackexchange.com/a/762993
+				sleep 2
+				read -t 0 _
+		}
+
+		There_Is_Flag() { grep -E -w '(-e|--editor|--write-message)' > /dev/null <<< "$@" ; }
+
+		if There_Is_STDIN
+		then Account_Message="$( < /dev/stdin )"
+		elif There_Is_Flag "$@"
+		then
+				# Invoke editor
+				if [[ "${EDITOR-}" = '' ]] && ! command -v nano && ! command -v vi
+				then echo "Error: No editor was found to be used to supply a message for the Account. Consider setting the global variable called EDITOR to your favourite text editor. You might still proceed." > /dev/stderr
+				else
+						declare Temp_Message_File="$(mktemp)"
+						for Editor in "${EDITOR-no_command}" 'nano' 'vi'
+						do
+								command -v "$Editor" > /dev/null || continue
+								"$Editor" "$Temp_Message_File"
+								break
+						done
+
+						if [[ ! -s "$Temp_Message_File" ]] # File is empty
+						then echo "Warning: Something went wrong fetching the message supplied via the editor. You might still proceed." > /dev/stderr
+						else Account_Message="$( < "$Temp_Message_File" )"
+						fi
+						rm "$Temp_Message_File"
+						unset Temp_Message_File
+				fi
+		else Account_Message=${4-}
+		fi
 		}
 fi
 
