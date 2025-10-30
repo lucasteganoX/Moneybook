@@ -888,6 +888,24 @@ then
 		declare Account_Funds=${3-}
 		declare Account_Message
 
+		# Argument checks
+		if [[ $# -lt 3 ]]
+		then
+				echo "Couldn't create Account, not enough arguments supplied :\(" > /dev/stderr
+				return 2
+		fi
+
+		if [[ ! "$Account_Share" =~ ^[0-9]+$ ]]
+		then
+				echo "Couldn't create Account, the share supplied is not an integer value." > /dev/stderr
+				return 2
+		fi
+
+		if [[ ! "$Account_Funds" =~ ^(0|-?[1-9][0-9]*)$ ]]
+		then
+				echo "Couldn't create Account, the funds supplied are not either a positive or negative integer, or zero." > /dev/stderr
+				return 2
+		fi
 		}
 fi
 
